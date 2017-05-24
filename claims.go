@@ -1,7 +1,5 @@
 package jwt
 
-import "fmt"
-
 type Claims struct {
 	ClaimData map[ClaimNames]interface{}
 }
