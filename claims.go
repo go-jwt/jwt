@@ -26,7 +26,7 @@ func (c *Claims) Register(names ClaimNames, v ...interface{}) {
 	c.ClaimData[names] = v
 }
 
-func (c *Claims) Get(names ClaimNames) interface{} {
+func (c *Claims) Find(names ClaimNames) interface{} {
 	if c == nil {
 		return nil
 	}

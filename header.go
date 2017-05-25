@@ -31,7 +31,7 @@ func (h *Header) Register(types HeaderTypes, v ...interface{}) {
 	h.HeaderData[types] = v
 }
 
-func (h *Header) Get(types HeaderTypes) interface{} {
+func (h *Header) Find(types HeaderTypes) interface{} {
 	if h == nil {
 		return nil
 	}
