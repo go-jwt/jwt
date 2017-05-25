@@ -22,6 +22,6 @@ func NewClaims() *Claims {
 	claims.ClaimData = make(map[ClaimNames]interface{}, ClaimMax)
 	return claims
 }
-func (c *Claims) Register(cn ClaimNames, v ...string) {
+func (c *Claims) Register(cn ClaimNames, v ...interface{}) {
 	c.ClaimData[cn] = v
 }
