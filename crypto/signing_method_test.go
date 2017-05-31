@@ -13,4 +13,5 @@ func TestSigningMethod_Alg(t *testing.T) {
 	fmt.Println(crypto.SHA384.New())
 	fmt.Println(sha512.New())
 	fmt.Println(sha512.New384())
+
 }

@@ -1,8 +1,16 @@
 package jwt
 
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/go-jwt/jwt/crypto"
+)
+
 //jose header
 type Header struct {
 	HeaderData map[HeaderTypes]interface{}
+	//alg        string
 }
 
 type HeaderTypes string
@@ -28,7 +36,12 @@ func NewHeader() *Header {
 	return h
 }
 func (h *Header) Register(types HeaderTypes, v ...interface{}) {
+	if len(v) == 1 {
+		h.HeaderData[types] = v[0]
+		return
+	}
 	h.HeaderData[types] = v
+
 }
 
 func (h *Header) Find(types HeaderTypes) interface{} {
@@ -46,4 +59,23 @@ func (h *Header) Remove(types HeaderTypes) {
 func (h *Header) Has(types HeaderTypes) bool {
 	_, flag := h.HeaderData[types]
 	return flag
+}
+
+func (h *Header) Base64() ([]byte, error) {
+	b, e := json.Marshal(h.HeaderData)
+	fmt.Println(string(b))
+	if e != nil {
+		return nil, e
+	}
+	return Base64Encode(b), nil
+}
+
+func (h *Header) Alg() crypto.SigningMethodNames {
+	if v, b := h.HeaderData["alg"]; b == true {
+		if v, b := v.(crypto.SigningMethodNames); b == true {
+			return v
+		}
+		return "none"
+	}
+	return "none"
 }
