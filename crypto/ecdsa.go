@@ -2,58 +2,77 @@ package crypto
 
 import (
 	"crypto"
-	"crypto/hmac"
-	"fmt"
+	"crypto/ecdsa"
+	"crypto/rand"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
+	"encoding/base64"
+	"log"
 )
 
-type SigningMethodECDSA struct {
-	SigningMethod
-	SigningMethodFunc
+type SigningECDSA struct {
+	Signing
+	KeySize   int
+	CurveBits int
+	SigningFunc
 }
-
-var (
-	signingMethodES256 *SigningMethodECDSA
-	signingMethodES384 *SigningMethodECDSA
-	signingMethodES512 *SigningMethodECDSA
-)
 
 func init() {
-	fmt.Println("second")
+	log.Println("SigningECDSA init")
+	SigningES256 := &SigningECDSA{Signing: Signing{Name: "ES256", Hash: crypto.SHA256}}
+	SigningES384 := &SigningECDSA{Signing: Signing{Name: "ES384", Hash: crypto.SHA384}}
+	SigningES512 := &SigningECDSA{Signing: Signing{Name: "ES512", Hash: crypto.SHA512}}
+	AddSigningFunc("ES256", SigningES256)
+	AddSigningFunc("ES384", SigningES384)
+	AddSigningFunc("ES512", SigningES512)
 
-	signingMethodES256 = &SigningMethodECDSA{SigningMethod: SigningMethod{Name: "ES256", Hash: crypto.SHA256}}
-	signingMethodES384 = &SigningMethodECDSA{SigningMethod: SigningMethod{Name: "ES384", Hash: crypto.SHA384}}
-	signingMethodES512 = &SigningMethodECDSA{SigningMethod: SigningMethod{Name: "ES512", Hash: crypto.SHA512}}
-	AddSigningMethodFunc("ES256", signingMethodES256)
-	AddSigningMethodFunc("ES384", NewECDSA("ES384", crypto.SHA384))
-	AddSigningMethodFunc("ES512", NewECDSA("ES512", crypto.SHA512))
-	//signingMethod["ES256"] = &SigningMethod{"ES256", crypto.SHA256}
-	//signingMethod["ES384"] = &SigningMethod{"ES384", crypto.SHA384}
-	//signingMethod["ES512"] = &SigningMethod{"ES512", crypto.SHA512}
 }
 
-func NewECDSA(name string, hash crypto.Hash) *SigningMethodECDSA { // Returns nil if signature is valid
-	sm := new(SigningMethodECDSA)
-	sm.Name = name
-	sm.Hash = hash
-	return sm
-}
-
-func (s *SigningMethodECDSA) Verify(signingString, signature string, key interface{}) error { // Returns nil if signature is valid
+func (s *SigningECDSA) Verify(signingString, signature string, key interface{}) error { // Returns nil if signature is valid
 	return nil
 }
-func (s *SigningMethodECDSA) Sign(data []byte, key interface{}) ([]byte, error) { // Returns encoded signature or error
-	keyBytes, ok := key.([]byte)
-	if !ok {
-		return nil, ErrorInvalidKey
+func (s *SigningECDSA) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
+	if ecdsaKey, ok := key.(*ecdsa.PrivateKey); ok {
+		//TODO: check source
+		if !s.Hash.Available() {
+			return "", ErrorHashUnavailable
+		}
+
+		hasher := s.Hash.New()
+		hasher.Write([]byte(data))
+
+		if r1, s1, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil)); err == nil {
+			curveBits := ecdsaKey.Curve.Params().BitSize
+
+			if s.CurveBits != curveBits {
+				return "", ErrorInvalidKey
+			}
+
+			keyBytes := curveBits / 8
+			if curveBits%8 > 0 {
+				keyBytes += 1
+			}
+
+			rBytes := r1.Bytes()
+			rBytesPadded := make([]byte, keyBytes)
+			copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
+
+			sBytes := s1.Bytes()
+			sBytesPadded := make([]byte, keyBytes)
+			copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
+
+			out := append(rBytesPadded, sBytesPadded...)
+
+			return base64.RawURLEncoding.EncodeToString(out), nil
+		} else {
+			return "", err
+		}
 	}
-	fmt.Println("hash", s.Hash.New())
-	hasher := hmac.New(s.Hash.New, keyBytes)
-	hasher.Write(data)
-	return hasher.Sum(nil), nil
+	return "", ErrorInvalidKeyType
 }
-func (s *SigningMethodECDSA) Alg() string { // returns the alg identifier for this method (example: 'HS256')
+func (s *SigningECDSA) Alg() string { // returns the alg identifier for this method (example: 'HS256')
 	return s.Name
 }
-func (s *SigningMethodECDSA) Hasher() crypto.Hash {
+func (s *SigningECDSA) HashType() crypto.Hash {
 	return s.Hash
 }

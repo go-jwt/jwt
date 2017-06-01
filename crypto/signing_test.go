@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestSigningMethod_Alg(t *testing.T) {
-	t.Log(signingMethod)
+func TestSigning_Alg(t *testing.T) {
+
 	fmt.Println(crypto.SHA512.New())
 	fmt.Println(crypto.SHA384.New())
 	fmt.Println(sha512.New())

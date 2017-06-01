@@ -3,63 +3,85 @@ package crypto
 import (
 	"crypto"
 	"crypto/hmac"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
 	"encoding/base64"
-	"fmt"
-	"strings"
+	"log"
+	"reflect"
 )
 
-type SigningMethodHMAC struct {
-	SigningMethod
-	SigningMethodFunc
+type SigningHMAC struct {
+	Signing
+	SigningFunc
 }
-
-var (
-	siningMethodHS256 *SigningMethodHMAC
-	siningMethodHS384 *SigningMethodHMAC
-	siningMethodHS512 *SigningMethodHMAC
-)
 
 func init() {
-	fmt.Println("first")
-	siningMethodHS256 = &SigningMethodHMAC{SigningMethod: SigningMethod{Name: "HS256", Hash: crypto.SHA256}}
-	siningMethodHS384 = &SigningMethodHMAC{SigningMethod: SigningMethod{Name: "HS384", Hash: crypto.SHA256}}
-	siningMethodHS256 = &SigningMethodHMAC{SigningMethod: SigningMethod{Name: "HS256", Hash: crypto.SHA256}}
-	//AddSigningMethodFunc("HS256", &SigningMethodHMAC{SigningMethod: SigningMethod{Name: "HS256", Hash: crypto.SHA256}})
-	//AddSigningMethodFunc("HS384", NewHMAC("HS384", crypto.SHA384))
-	//AddSigningMethodFunc("HS512", NewHMAC("HS512", crypto.SHA512))
+	log.Println("SigningHMAC init")
+	siningMethodHS256 := &SigningHMAC{Signing: Signing{Name: "HS256", Hash: crypto.SHA256}}
+	siningMethodHS384 := &SigningHMAC{Signing: Signing{Name: "HS384", Hash: crypto.SHA384}}
+	siningMethodHS512 := &SigningHMAC{Signing: Signing{Name: "HS512", Hash: crypto.SHA512}}
+	AddSigningFunc("HS256", siningMethodHS256)
+	AddSigningFunc("HS384", siningMethodHS384)
+	AddSigningFunc("HS512", siningMethodHS512)
+
 }
 
-func NewHMAC(name string, hash crypto.Hash) *SigningMethodHMAC { // Returns nil if signature is valid
-	sm := new(SigningMethodHMAC)
-	sm.Name = name
-	sm.Hash = hash
-	fmt.Println(hash.New())
-	return sm
-}
-
-func (s *SigningMethodHMAC) Verify(signingString, signature string, key interface{}) error { // Returns nil if signature is valid
-	return nil
-}
-func (s *SigningMethodHMAC) Sign(data []byte, key interface{}) ([]byte, error) { // Returns encoded signature or error
-
-	if keyBytes, ok := key.([]byte); ok {
-		if !s.Hash.Available() {
-			return []byte(""), ErrorHashUnavailable
-		}
-
-		hasher := hmac.New(s.Hash.New, keyBytes)
-		hasher.Write(data)
-
-		return []byte(strings.TrimRight(base64.URLEncoding.EncodeToString((hasher.Sum(nil))), "=")), nil
+func (s *SigningHMAC) Verify(data, sign string, key interface{}) error { // Returns nil if signature is valid
+	// Verify the key is the right type
+	keyBytes, ok := key.(string)
+	if !ok {
+		return ErrorInvalidKeyType
 	}
 
-	return []byte(""), ErrorInvalidKey
+	// Decode signature, for comparison
+	sig, err := base64.RawURLEncoding.DecodeString(data)
+	if err != nil {
+		return err
+	}
+
+	// Can we use the specified hashing method?
+	if !s.Hash.Available() {
+		return ErrorHashUnavailable
+	}
+
+	// This signing method is symmetric, so we validate the signature
+	// by reproducing the signature from the signing string and key, then
+	// comparing that against the provided signature.
+	hasher := hmac.New(s.Hash.New, []byte(keyBytes))
+	hasher.Write([]byte(sign))
+	if !hmac.Equal(sig, hasher.Sum(nil)) {
+		return ErrorSignatureInvalid
+	}
+
+	// No validation errors.  Signature is good.
+	return nil
+}
+func (s *SigningHMAC) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
+	var keyBytes []byte
+	switch key.(type) {
+	case []byte:
+		keyBytes = key.([]byte)
+	case string:
+		keyBytes = []byte(key.(string))
+	default:
+		log.Println("unknow sign key type", reflect.TypeOf(key))
+
+		return "", ErrorInvalidKey
+	}
+
+	if !s.Hash.Available() {
+		return "", ErrorHashUnavailable
+	}
+	hasher := hmac.New(s.Hash.New, []byte(keyBytes))
+	hasher.Write([]byte(data))
+	return base64.RawURLEncoding.EncodeToString(hasher.Sum(nil)), nil
+	//return strings.TrimRight(base64.URLEncoding.EncodeToString((hasher.Sum(nil))), "="), nil
 
 }
 
-func (s *SigningMethodHMAC) Alg() string { // returns the alg identifier for this method (example: 'HS256')
+func (s *SigningHMAC) Alg() string { // returns the alg identifier for this method (example: 'HS256')
 	return s.Alg()
 }
-func (s *SigningMethodHMAC) Hasher() crypto.Hash {
-	return s.Hasher()
+func (s *SigningHMAC) HashType() crypto.Hash {
+	return s.HashType()
 }

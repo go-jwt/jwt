@@ -33,8 +33,21 @@ const (
 func NewHeader() *Header {
 	h := new(Header)
 	h.HeaderData = make(map[HeaderTypes]interface{}, HeaderMax)
+
 	return h
 }
+
+func NewJWTHeader(v ...interface{}) *Header {
+	h := NewHeader()
+	h.Register("typ", "JWT")
+	if len(v) == 1 {
+		if v, b := v[0].(string); b {
+			h.Register("alg", v)
+		}
+	}
+	return h
+}
+
 func (h *Header) Register(types HeaderTypes, v ...interface{}) {
 	if len(v) == 1 {
 		h.HeaderData[types] = v[0]
@@ -61,19 +74,31 @@ func (h *Header) Has(types HeaderTypes) bool {
 	return flag
 }
 
-func (h *Header) Base64() ([]byte, error) {
+func (h *Header) Base64() string {
 	b, e := json.Marshal(h.HeaderData)
-	fmt.Println(string(b))
+	if e != nil {
+		return ""
+	}
+	return Base64Encode(b)
+}
+
+func ParseHeader(ser string) (*Header, error) {
+	header := new(Header)
+	e := ParseBase64(ser, &header.HeaderData)
 	if e != nil {
 		return nil, e
 	}
-	return Base64Encode(b), nil
+	return header, nil
+
 }
 
-func (h *Header) Alg() crypto.SigningMethodNames {
+func (h *Header) Alg() crypto.SigningNames {
+
 	if v, b := h.HeaderData["alg"]; b == true {
-		if v, b := v.(crypto.SigningMethodNames); b == true {
-			return v
+		if v, b := v.(string); b == true {
+			fmt.Println("header alg", v)
+			names := crypto.SigningNames(v)
+			return names
 		}
 		return "none"
 	}

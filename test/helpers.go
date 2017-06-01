@@ -31,7 +31,7 @@ func LoadRSAPublicKeyFromDisk(location string) *rsa.PublicKey {
 }
 
 func MakeSampleToken(c jwt.Claims, key interface{}) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
+	token := jwt.NewWithClaims(jwt.SigningRS256, c)
 	s, e := token.SignedString(key)
 
 	if e != nil {

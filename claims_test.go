@@ -2,16 +2,12 @@ package jwt
 
 import (
 	_ "crypto"
-	"fmt"
-	"io/ioutil"
+
 	"testing"
+	"time"
 )
 
 func TestClaims_Register(t *testing.T) {
-	claims := NewClaims()
-	claims.Register(CLAIM_AUDIENCE, "example.com", "api.example.com")
-	b, _ := claims.Base64()
-	fmt.Println(string(b))
 
 }
 
@@ -34,7 +30,7 @@ func TestClaims_VerifyAudience(t *testing.T) {
 	}
 }
 func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/hmacTestKey")
+	//key, _ := ioutil.ReadFile("test/hmacTestKey")
 	// Create JWS claims
 	claims := NewClaims()
 	claims.RegisterAud("example.com", "api.example.com")
@@ -43,190 +39,192 @@ func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
 	header.Register(HEADER_TYPE, "JWT")
 	header.Register(HEADER_ALGORITHM, "HS256")
 
-	tk := NewToken(claims, header)
-	fmt.Println(tk.Serialize([]byte(key)))
+	tk := NewToken(claims, header, []byte("abcdef"))
+
+	ser, _ := tk.Serialize()
+
+	token, _ := ParseToken(ser, "abcdef")
+
+	aud, _ := token.Claims().Audience()
+
+	t.Logf("aud Value: %s", aud)
+	t.Logf("aud Type : %T", aud)
 
 }
 
-//	token := jws.NewJWT(claims, crypto.SigningMethodHS256)
-//	serializedToken, _ := token.Serialize([]byte("abcdef"))
-//
-//	// Unmarshal JSON
-//	newToken, _ := jws.ParseJWT(serializedToken)
-//
-//	c := newToken.Claims()
-//
-//	// Get Audience
-//	aud, ok := c.Audience()
-//	if !ok {
-//
-//		// Fails
-//		t.Fail()
-//	}
-//
-//	t.Logf("aud Value: %s", aud)
-//	t.Logf("aud Type : %T", aud)
-//}
-//
-//func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
-//	// Create JWS claims
-//	claims := NewClaims()
-//	claims.RegisterAud("example.com", "api.example.com")
-//
-//	token := jws.NewJWT(claims, crypto.SigningMethodHS256)
-//	serializedToken, _ := token.Serialize([]byte("abcdef"))
-//
-//	// Unmarshal JSON
-//	newToken, _ := jws.ParseJWT(serializedToken)
-//
-//	c := newToken.Claims()
-//
-//	// Get Audience
-//	aud, ok := c.Audience()
-//	if !ok {
-//
-//		// Fails
-//		t.Fail()
-//	}
-//
-//	t.Logf("aud len(): %d", len(aud))
-//	t.Logf("aud Value: %s", aud)
-//	t.Logf("aud Type : %T", aud)
-//}
-//
-//func TestSingleAudienceFix_AfterMarshal(t *testing.T) {
-//	// Create JWS claims
-//	claims := jws.Claims{}
-//	claims.Regiudience("example.com")
-//
-//	token := jws.NewJWT(claims, crypto.SigningMethodHS256)
-//	serializedToken, _ := token.Serialize([]byte("abcdef"))
-//
-//	// Unmarshal JSON
-//	newToken, _ := jws.ParseJWT(serializedToken)
-//	c := newToken.Claims()
-//
-//	// Get Audience
-//	aud, ok := c.Audience()
-//	if !ok {
-//
-//		// Fails
-//		t.Fail()
-//	}
-//
-//	t.Logf("aud len(): %d", len(aud))
-//	t.Logf("aud Value: %s", aud)
-//	t.Logf("aud Type : %T", aud)
-//}
-//
-//func TestValidate(t *testing.T) {
-//	now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
-//	before, after := now.Add(-time.Minute), now.Add(time.Minute)
-//	leeway := 10 * time.Second
-//
-//	exp := func(t time.Time) jwt.Claims {
-//		return jwt.Claims{"exp": t.Unix()}
-//	}
-//	nbf := func(t time.Time) jwt.Claims {
-//		return jwt.Claims{"nbf": t.Unix()}
-//	}
-//
-//	var tests = []struct {
-//		desc      string
-//		c         jwt.Claims
-//		now       time.Time
-//		expLeeway time.Duration
-//		nbfLeeway time.Duration
-//		err       error
-//	}{
-//		// test for nbf < now <= exp
-//		{desc: "exp == nil && nbf == nil", c: jwt.Claims{}, now: now, err: nil},
-//
-//		{desc: "now > exp", now: now, c: exp(before), err: jwt.ErrTokenIsExpired},
-//		{desc: "now = exp", now: now, c: exp(now), err: nil},
-//		{desc: "now < exp", now: now, c: exp(after), err: nil},
-//
-//		{desc: "nbf < now", c: nbf(before), now: now, err: nil},
-//		{desc: "nbf = now", c: nbf(now), now: now, err: jwt.ErrTokenNotYetValid},
-//		{desc: "nbf > now", c: nbf(after), now: now, err: jwt.ErrTokenNotYetValid},
-//
-//		// test for nbf-x < now <= exp+y
-//		{desc: "now < exp+x", now: now.Add(leeway - time.Second), expLeeway: leeway, c: exp(now), err: nil},
-//		{desc: "now = exp+x", now: now.Add(leeway), expLeeway: leeway, c: exp(now), err: nil},
-//		{desc: "now > exp+x", now: now.Add(leeway + time.Second), expLeeway: leeway, c: exp(now), err: jwt.ErrTokenIsExpired},
-//
-//		{desc: "nbf-x > now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway + time.Second), err: nil},
-//		{desc: "nbf-x = now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway), err: jwt.ErrTokenNotYetValid},
-//		{desc: "nbf-x < now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway - time.Second), err: jwt.ErrTokenNotYetValid},
-//	}
-//
-//	for i, tt := range tests {
-//		if got, want := tt.c.Validate(tt.now, tt.expLeeway, tt.nbfLeeway), tt.err; got != want {
-//			t.Errorf("%d - %q: got %v want %v", i, tt.desc, got, want)
-//		}
-//	}
-//}
-//
-//func TestGetAndSetTime(t *testing.T) {
-//	now := time.Now()
-//	nowUnix := now.Unix()
-//	c := jwt.Claims{
-//		"int":     int(nowUnix),
-//		"int32":   int32(nowUnix),
-//		"int64":   int64(nowUnix),
-//		"uint":    uint(nowUnix),
-//		"uint32":  uint32(nowUnix),
-//		"uint64":  uint64(nowUnix),
-//		"float64": float64(nowUnix),
-//	}
-//	c.SetTime("setTime", now)
-//	for k := range c {
-//		v, ok := c.GetTime(k)
-//		if got, want := v, time.Unix(nowUnix, 0); !ok || !got.Equal(want) {
-//			t.Errorf("%s: got %v want %v", k, got, want)
-//		}
-//	}
-//}
-//
-//// TestTimeValuesThroughJSON verifies that the time values
-//// that are set via the Set{IssuedAt,NotBefore,Expiration}()
-//// methods can actually be parsed back
-//func TestTimeValuesThroughJSON(t *testing.T) {
-//	now := time.Unix(time.Now().Unix(), 0)
-//
-//	c := jws.Claims{}
-//	c.SetIssuedAt(now)
-//	c.SetNotBefore(now)
-//	c.SetExpiration(now)
-//
-//	// serialize to JWT
-//	tok := jws.NewJWT(c, crypto.SigningMethodHS256)
-//	b, err := tok.Serialize([]byte("key"))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	// parse the JWT again
-//	tok2, err := jws.ParseJWT(b)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	c2 := tok2.Claims()
-//
-//	iat, ok1 := c2.IssuedAt()
-//	nbf, ok2 := c2.NotBefore()
-//	exp, ok3 := c2.Expiration()
-//	if !ok1 || !ok2 || !ok3 {
-//		t.Fatal("got false want true")
-//	}
-//
-//	if got, want := iat, now; !got.Equal(want) {
-//		t.Errorf("%s: got %v want %v", "iat", got, want)
-//	}
-//	if got, want := nbf, now; !got.Equal(want) {
-//		t.Errorf("%s: got %v want %v", "nbf", got, want)
-//	}
-//	if got, want := exp, now; !got.Equal(want) {
-//		t.Errorf("%s: got %v want %v", "exp", got, want)
-//	}
-//}
+func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
+	// Create JWS claims
+	claims := NewClaims()
+	claims.RegisterAud("example.com", "api.example.com")
+	header := NewHeader()
+	header.Register(HEADER_TYPE, "JWT")
+	header.Register(HEADER_ALGORITHM, "HS256")
+	token := NewToken(claims, header, "abcdef")
+
+	serializedToken, _ := token.Serialize()
+
+	// Unmarshal JSON
+	newToken, _ := ParseToken(serializedToken, "abcdef")
+
+	c := newToken.Claims()
+
+	// Get Audience
+	aud, ok := c.Audience()
+	if !ok {
+
+		// Fails
+		t.Fail()
+	}
+
+	t.Logf("aud len(): %d", len(aud))
+	t.Logf("aud Value: %s", aud)
+	t.Logf("aud Type : %T", aud)
+}
+
+func TestSingleAudienceFix_AfterMarshal(t *testing.T) {
+	// Create JWS claims
+	// Create JWS claims
+	claims := NewClaims()
+	claims.RegisterAud("example.com", "api.example.com")
+	header := NewHeader()
+	header.Register(HEADER_TYPE, "JWT")
+	header.Register(HEADER_ALGORITHM, "HS256")
+	token := NewToken(claims, header, "abcdef")
+
+	serializedToken, _ := token.Serialize()
+
+	// Unmarshal JSON
+	newToken, _ := ParseToken(serializedToken, "abcdef")
+	c := newToken.Claims()
+
+	// Get Audience
+	aud, ok := c.Audience()
+	if !ok {
+
+		// Fails
+		t.Fail()
+	}
+
+	t.Logf("aud len(): %d", len(aud))
+	t.Logf("aud Value: %s", aud)
+	t.Logf("aud Type : %T", aud)
+}
+
+func TestValidate(t *testing.T) {
+	now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	before, after := now.Add(-time.Minute), now.Add(time.Minute)
+	leeway := 10 * time.Second
+
+	exp := func(t time.Time) Claims {
+		claims := NewClaims()
+		claims.RegisterExp(t)
+		return *claims
+		//return Claims{ClaimData: map[string]interface{"exp": t.Unix()}}
+	}
+	nbf := func(t time.Time) Claims {
+		claims := NewClaims()
+		claims.RegisterNbf(t)
+		return *claims
+
+		//return jwt.Claims{"nbf": t.Unix()}
+	}
+
+	var tests = []struct {
+		desc      string
+		c         Claims
+		now       time.Time
+		expLeeway time.Duration
+		nbfLeeway time.Duration
+		err       error
+	}{
+		// test for nbf < now <= exp
+		{desc: "exp == nil && nbf == nil", c: Claims{}, now: now, err: nil},
+
+		{desc: "now > exp", now: now, c: exp(before), err: ErrorTokenIsExpired},
+		{desc: "now = exp", now: now, c: exp(now), err: nil},
+		{desc: "now < exp", now: now, c: exp(after), err: nil},
+
+		{desc: "nbf < now", c: nbf(before), now: now, err: nil},
+		{desc: "nbf = now", c: nbf(now), now: now, err: ErrorTokenNotYetValid},
+		{desc: "nbf > now", c: nbf(after), now: now, err: ErrorTokenNotYetValid},
+
+		// test for nbf-x < now <= exp+y
+		{desc: "now < exp+x", now: now.Add(leeway - time.Second), expLeeway: leeway, c: exp(now), err: nil},
+		{desc: "now = exp+x", now: now.Add(leeway), expLeeway: leeway, c: exp(now), err: nil},
+		{desc: "now > exp+x", now: now.Add(leeway + time.Second), expLeeway: leeway, c: exp(now), err: ErrorTokenIsExpired},
+
+		{desc: "nbf-x > now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway + time.Second), err: nil},
+		{desc: "nbf-x = now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway), err: ErrorTokenNotYetValid},
+		{desc: "nbf-x < now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway - time.Second), err: ErrorTokenNotYetValid},
+	}
+
+	for i, tt := range tests {
+		if got, want := tt.c.Validate(tt.now, tt.expLeeway, tt.nbfLeeway), tt.err; got != want {
+			t.Errorf("%d - %q: got %v want %v", i, tt.desc, got, want)
+		}
+	}
+}
+
+func TestGetAndSetTime(t *testing.T) {
+	now := time.Now()
+	nowUnix := now.Unix()
+	c := NewClaims()
+	c.Register("int", int(nowUnix))
+	c.Register("int32", int32(nowUnix))
+	c.Register("int64", int64(nowUnix))
+	c.Register("uint", uint(nowUnix))
+	c.Register("uint32", uint32(nowUnix))
+	c.Register("uint64", uint64(nowUnix))
+	c.Register("float64", float64(nowUnix))
+
+	c.Register("setTime", now)
+	for k := range c.ClaimData {
+		v := c.Find(k)
+		v1, ok := LiteralToTime(v)
+		if got, want := v1, time.Unix(nowUnix, 0); !ok || !got.Equal(want) {
+			t.Errorf("%s: got %v want %v", k, got, want)
+		}
+	}
+}
+
+func TestTimeValuesThroughJSON(t *testing.T) {
+	now := time.Unix(time.Now().Unix(), 0)
+
+	c := NewClaims()
+	c.RegisterIat(now)
+	c.RegisterNbf(now)
+	c.RegisterExp(now)
+
+	h := NewJWTHeader("HS256")
+
+	// serialize to JWT
+	tok := NewToken(c, h, "key")
+	b, err := tok.Serialize()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// parse the JWT again
+	tok2, err := ParseToken(b, "key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c2 := tok2.Claims()
+
+	iat, ok1 := c2.IssuedAt()
+	nbf, ok2 := c2.NotBefore()
+	exp, ok3 := c2.ExpirationTime()
+	if !ok1 || !ok2 || !ok3 {
+		t.Fatal("got false want true", ok1, ok2, ok3)
+	}
+
+	if got, want := iat, now; !got.Equal(want) {
+		t.Errorf("%s: got %v want %v", "iat", got, want)
+	}
+	if got, want := nbf, now; !got.Equal(want) {
+		t.Errorf("%s: got %v want %v", "nbf", got, want)
+	}
+	if got, want := exp, now; !got.Equal(want) {
+		t.Errorf("%s: got %v want %v", "exp", got, want)
+	}
+}
