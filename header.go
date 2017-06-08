@@ -2,16 +2,16 @@ package jwt
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/go-jwt/jwt/crypto"
 )
 
-//jose header
-type Header struct {
-	HeaderData map[HeaderTypes]interface{}
-	//alg        string
-}
+//type Header struct {
+//	HeaderData map[HeaderTypes]interface{}
+//	//alg        string
+//}
+
+type Header map[HeaderTypes]interface{}
 
 type HeaderTypes string
 
@@ -31,51 +31,39 @@ const (
 )
 
 func NewHeader() *Header {
-	h := new(Header)
-	h.HeaderData = make(map[HeaderTypes]interface{}, HeaderMax)
-
-	return h
+	tmp := (Header)(make(map[HeaderTypes]interface{}, HeaderMax))
+	return &tmp
 }
 
-func NewJWTHeader(v ...interface{}) *Header {
+func NewJWTHeader() *Header {
 	h := NewHeader()
 	h.Register("typ", "JWT")
-	if len(v) == 1 {
-		if v, b := v[0].(string); b {
-			h.Register("alg", v)
-		}
-	}
 	return h
 }
 
-func (h *Header) Register(types HeaderTypes, v ...interface{}) {
-	if len(v) == 1 {
-		h.HeaderData[types] = v[0]
-		return
-	}
-	h.HeaderData[types] = v
+func (h *Header) Register(types HeaderTypes, v interface{}) {
+	(*h)[types] = v
 
 }
 
-func (h *Header) Find(types HeaderTypes) interface{} {
-	if h == nil {
-		return nil
+func (h *Header) Find(types HeaderTypes) (interface{}, bool) {
+	if v, b := (*c)[types]; b {
+		return v, true
 	}
-	return h.HeaderData[types]
-
+	return nil, false
 }
 
 func (h *Header) Remove(types HeaderTypes) {
-	delete(h.HeaderData, types)
+	delete(*h, types)
 }
 
 func (h *Header) Has(types HeaderTypes) bool {
-	_, flag := h.HeaderData[types]
+	_, flag := (*h)[types]
 	return flag
 }
 
 func (h *Header) Base64() string {
-	b, e := json.Marshal(h.HeaderData)
+	b, e := json.Marshal(*h)
 	if e != nil {
 		return ""
 	}
@@ -84,7 +72,7 @@ func (h *Header) Base64() string {
 
 func ParseHeader(ser string) (*Header, error) {
 	header := new(Header)
-	e := ParseBase64(ser, &header.HeaderData)
+	e := ParseBase64(ser, header)
 	if e != nil {
 		return nil, e
 	}
@@ -93,14 +81,12 @@ func ParseHeader(ser string) (*Header, error) {
 }
 
 func (h *Header) Alg() crypto.SigningNames {
-
-	if v, b := h.HeaderData["alg"]; b == true {
+	if v, b := (*h)["alg"]; b == true {
 		if v, b := v.(string); b == true {
-			fmt.Println("header alg", v)
 			names := crypto.SigningNames(v)
 			return names
 		}
-		return "none"
+		return ""
 	}
-	return "none"
+	return ""
 }

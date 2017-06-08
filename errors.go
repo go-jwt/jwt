@@ -26,3 +26,7 @@ var (
 	// ErrorInvalidAUDClaim means the "aud" claim is invalid.
 	ErrorInvalidAUDClaim = errors.New("claim \"aud\" is invalid")
 )
+
+var (
+	CaimsErrorTimeFunc = errors.New("time must set by RegisterByTime")
+)

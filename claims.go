@@ -3,11 +3,15 @@ package jwt
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/go-jwt/jwt/util"
 )
 
-type Claims struct {
-	ClaimData map[ClaimNames]interface{}
-}
+//type Claims struct {
+//	ClaimData map[ClaimNames]interface{}
+//}
+
+type Claims map[ClaimNames]interface{}
 
 type ClaimNames string
 
@@ -23,98 +27,122 @@ const (
 )
 
 func NewClaims() *Claims {
-	claims := new(Claims)
-	claims.ClaimData = make(map[ClaimNames]interface{}, ClaimMax)
-	return claims
+	//claims := new(Claims)
+	//claims.ClaimData = make(map[ClaimNames]interface{}, ClaimMax)
+	tmp := (Claims)(make(map[ClaimNames]interface{}, ClaimMax))
+
+	return &tmp
 }
 
-func (c *Claims) Register(names ClaimNames, v ...interface{}) {
-	c.ClaimData[names] = v[0]
+func (c *Claims) Register(names ClaimNames, v interface{}) {
+	//switch v.(type) {
+	//case time.Time:
+	//	c.ClaimData[names] = v.(time.Time).Unix()
+	//	return CaimsErrorTimeFunc
+	//default:
+	//	c.ClaimData[names] = v
+	//}
+	(*c)[names] = v
+
+}
+func (c *Claims) RegisterByTime(names ClaimNames, time time.Time) {
+	(*c)[names] = time.Unix()
+
 }
 
-//register name
-func (c *Claims) RegisterAud(v ...interface{}) {
-	c.Register(CLAIM_AUDIENCE, v...)
+func (c *Claims) Find(names ClaimNames) (interface{}, bool) {
+	if v, b := (*c)[names]; b {
+		return v, true
+	}
+	return nil, false
 }
 
+func (c *Claims) FindToTime(names ClaimNames) (time.Time, bool) {
+	if v, b := (*c)[names]; b {
+		return util.LiteralToTime(v)
+	}
+
+	return time.Time{}, false
+}
+
+func (c *Claims) Remove(names ClaimNames) {
+	delete(*c, names)
+}
+
+func (c *Claims) Has(names ClaimNames) bool {
+	_, flag := (*c)[names]
+	return flag
+}
+
+func (c *Claims) RegisterAud(v ...string) {
+	c.Register(CLAIM_AUDIENCE, v)
+}
+
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.3">
+ *
+ * @return the JWT {[]string,true} value or {nil,false} if not present.
+ */
 func (c *Claims) Audience() ([]string, bool) {
-	var r []string
-	if v, flag := c.ClaimData[CLAIM_AUDIENCE]; flag == true {
-		switch v.(type) {
-		case []string:
-			r = v.([]string)
-		case string:
-			r = []string{v.(string)}
-		case []interface{}:
-			for _, v := range v.([]interface{}) {
-				if v1, b := LiteralToString(v); b {
-					r = append(r, v1)
-				}
-			}
-		case interface{}:
-			if v1, b := LiteralToString(v); b {
-				r = append(r, v1)
-			}
-		default:
-			return []string{""}, false
+	if v, flag := c.Find(CLAIM_AUDIENCE); flag {
+		if v := util.LiteralToStringArray(v); v != nil {
+			return v, true
 		}
 	}
-	return r, true
+	return nil, false
 
 }
 
-func (c *Claims) RegisterSub(v ...interface{}) {
-	c.Register(CLAIM_SUBJECT, v...)
+func (c *Claims) RegisterSub(v string) {
+	c.Register(CLAIM_SUBJECT, v)
 }
 
-//func (c *Claims) Subject() (int64, bool) {
-//	v, b := c.Find(CLAIM_SUBJECT).(int64)
-//	return v, b
-//
-//}
-func (c *Claims) RegisterIss(v ...interface{}) {
-	c.Register(CLAIM_ISSUER, v...)
+func (c *Claims) RegisterIss(v string) {
+	c.Register(CLAIM_ISSUER, v)
 }
 func (c *Claims) RegisterExp(t time.Time) {
-	c.Register(CLAIM_EXPIRATION_TIME, t.Unix())
+	c.RegisterByTime(CLAIM_EXPIRATION_TIME, t)
 }
 
 func (c *Claims) ExpirationTime() (time.Time, bool) {
-	v1, b := LiteralToTime(c.Find(CLAIM_EXPIRATION_TIME))
-	return v1, b
+	return c.FindToTime(CLAIM_EXPIRATION_TIME)
 
 }
 
 func (c *Claims) RegisterNbf(t time.Time) {
-	c.Register(CLAIM_NOT_BEFORE, t.Unix())
+	c.RegisterByTime(CLAIM_NOT_BEFORE, t)
 }
 
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.5">
+ *
+ * <p>A JWT obtained before this timestamp should not be used.</p>
+ *
+ * @return the JWT {time,true} value or {time,false} if not present.
+ */
 func (c *Claims) NotBefore() (time.Time, bool) {
-	v1, b := LiteralToTime(c.Find(CLAIM_NOT_BEFORE))
-	return v1, b
+	return c.FindToTime(CLAIM_NOT_BEFORE)
 
 }
 
 func (c *Claims) RegisterIat(t time.Time) {
-	c.Register(CLAIM_ISSUED_AT, t.Unix())
+	c.RegisterByTime(CLAIM_ISSUED_AT, t)
 }
 func (c *Claims) IssuedAt() (time.Time, bool) {
-	v1, b := LiteralToTime(c.Find(CLAIM_ISSUED_AT))
-	return v1, b
-
+	return c.FindToTime(CLAIM_ISSUED_AT)
 }
-func (c *Claims) RegisterJti(v ...interface{}) {
-	c.Register(CLAIM_JWT_ID, v...)
+func (c *Claims) RegisterJti(v string) {
+	c.Register(CLAIM_JWT_ID, v)
 }
 
 func (c *Claims) Validate(now time.Time, expLeeway, nbfLeeway time.Duration) error {
-	if exp, ok := c.ExpirationTime(); ok {
+	if exp, b := c.ExpirationTime(); b {
 		if now.After(exp.Add(expLeeway)) {
 			return ErrorTokenIsExpired
 		}
 	}
 
-	if nbf, ok := c.NotBefore(); ok {
+	if nbf, b := c.NotBefore(); b {
 		if !now.After(nbf.Add(-nbfLeeway)) {
 			return ErrorTokenNotYetValid
 		}
@@ -122,62 +150,12 @@ func (c *Claims) Validate(now time.Time, expLeeway, nbfLeeway time.Duration) err
 	return nil
 }
 
-func (c *Claims) Find(names ClaimNames) interface{} {
-	if v, b := c.ClaimData[names]; b {
-		return v
-	}
-	return nil
-}
-
-func (c *Claims) Remove(names ClaimNames) {
-	delete(c.ClaimData, names)
-}
-
-func (c *Claims) Has(names ClaimNames) bool {
-	_, flag := c.ClaimData[names]
-	return flag
-}
-
-func LiteralToString(v interface{}) (string, bool) {
-	if v, b := v.(string); b {
-		return v, true
-	}
-	if v, b := v.([]byte); b {
-		return string(v), true
-	}
-	return "", false
-}
-
-func LiteralToTime(v interface{}) (time.Time, bool) {
-	var t int64
-	switch v.(type) {
-	case int:
-		t = int64(v.(int))
-	case int32:
-		t = int64(v.(int32))
-	case int64:
-		t = v.(int64)
-	case uint:
-		t = int64(v.(uint))
-	case uint32:
-		t = int64(v.(uint32))
-	case uint64:
-		t = int64(v.(uint64))
-	case float64:
-		t = int64(v.(float64))
-	default:
-		return time.Time{}, false
-	}
-
-	return time.Unix(t, 0), true
-}
-
 func (c *Claims) VerifyAudience(v string) {
 
 }
 
 func (c *Claims) Base64() string {
-	b, e := json.Marshal(c.ClaimData)
+	b, e := json.Marshal(*c)
 	if e != nil {
 		return ""
 	}
@@ -187,7 +165,7 @@ func (c *Claims) Base64() string {
 
 func ParseClaims(ser string) (*Claims, error) {
 	claims := new(Claims)
-	e := ParseBase64(ser, &claims.ClaimData)
+	e := ParseBase64(ser, claims)
 	if e != nil {
 		return nil, e
 	}
@@ -246,3 +224,58 @@ func verifyArraies(lef, rig []string) bool {
 	return true
 
 }
+
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.1">
+ * <code>iss</code></a> (issuer) value or {@code null} if not present.
+ *
+ * @return the JWT {@code iss} value or {@code null} if not present.
+ */
+func (*Claims) Issuer() {
+
+}
+
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.2">
+ * <code>sub</code></a> (subject) value or {@code null} if not present.
+ *
+ * @return the JWT {@code sub} value or {@code null} if not present.
+ */
+func (*Claims) Subject() {
+
+}
+
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.4">
+ * <code>exp</code></a> (expiration) timestamp or {@code null} if not present.
+ *
+ * <p>A JWT obtained after this timestamp should not be used.</p>
+ *
+ * @return the JWT {@code exp} value or {@code null} if not present.
+ */
+func (*Claims) Expiration() time.Time {
+	return time.Time{}
+}
+
+/**
+ * Returns the JWT <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.6">
+ * <code>iat</code></a> (issued at) timestamp or {@code null} if not present.
+ *
+ * <p>If present, this value is the timestamp when the JWT was created.</p>
+ *
+ * @return the JWT {@code nbf} value or {@code null} if not present.
+ */
+//Date IssuedAt();
+
+/**
+ * Returns the JWTs <a href="https://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-4.1.7">
+ * <code>jti</code></a> (JWT ID) value or {@code null} if not present.
+ *
+ * <p>This value is a CaSe-SenSiTiVe unique identifier for the JWT. If available, this value is expected to be
+ * assigned in a manner that ensures that there is a negligible probability that the same value will be
+ * accidentally
+ * assigned to a different data object.  The ID can be used to prevent the JWT from being replayed.</p>
+ *
+ * @return the JWT {@code jti} value or {@code null} if not present.
+ */
+//String getId();

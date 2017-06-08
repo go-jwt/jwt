@@ -3,13 +3,11 @@ package jwt
 import (
 	_ "crypto"
 
+	"github.com/go-jwt/jwt/util"
+
 	"testing"
 	"time"
 )
-
-func TestClaims_Register(t *testing.T) {
-
-}
 
 func TestClaims_VerifyAudience(t *testing.T) {
 	tests := [...]struct {
@@ -43,8 +41,11 @@ func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
 
 	ser, _ := tk.Serialize()
 
-	token, _ := ParseToken(ser, "abcdef")
-
+	token, e := ParseToken(ser, "abcdef")
+	if e != nil {
+		t.Logf("%s", e.Error())
+		return
+	}
 	aud, _ := token.Claims().Audience()
 
 	t.Logf("aud Value: %s", aud)
@@ -178,9 +179,9 @@ func TestGetAndSetTime(t *testing.T) {
 	c.Register("float64", float64(nowUnix))
 
 	c.Register("setTime", now)
-	for k := range c.ClaimData {
-		v := c.Find(k)
-		v1, ok := LiteralToTime(v)
+	for k := range *c {
+		v, _ := c.Find(k)
+		v1, ok := util.LiteralToTime(v)
 		if got, want := v1, time.Unix(nowUnix, 0); !ok || !got.Equal(want) {
 			t.Errorf("%s: got %v want %v", k, got, want)
 		}
@@ -195,8 +196,8 @@ func TestTimeValuesThroughJSON(t *testing.T) {
 	c.RegisterNbf(now)
 	c.RegisterExp(now)
 
-	h := NewJWTHeader("HS256")
-
+	h := NewJWTHeader()
+	h.Register("alg", "HS256")
 	// serialize to JWT
 	tok := NewToken(c, h, "key")
 	b, err := tok.Serialize()

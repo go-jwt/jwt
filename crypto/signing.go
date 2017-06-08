@@ -32,7 +32,7 @@ func (s *Signing) HashType() crypto.Hash {
 	return s.Hash
 }
 
-type SigningNames string
+type  SigningNames string
 
 var (
 	signing     map[SigningNames]*Signing
