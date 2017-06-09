@@ -7,19 +7,19 @@ import (
 	_ "crypto/sha512"
 	"encoding/base64"
 	"log"
-	"reflect"
+
+	"github.com/go-jwt/jwt/util"
 )
 
 type SigningHMAC struct {
 	Signing
-	SigningFunc
 }
 
 func init() {
 	log.Println("SigningHMAC init")
-	siningMethodHS256 := &SigningHMAC{Signing: Signing{Name: "HS256", Hash: crypto.SHA256}}
-	siningMethodHS384 := &SigningHMAC{Signing: Signing{Name: "HS384", Hash: crypto.SHA384}}
-	siningMethodHS512 := &SigningHMAC{Signing: Signing{Name: "HS512", Hash: crypto.SHA512}}
+	siningMethodHS256 := &SigningHMAC{Signing{"HS256", crypto.SHA256}}
+	siningMethodHS384 := &SigningHMAC{Signing{"HS384", crypto.SHA384}}
+	siningMethodHS512 := &SigningHMAC{Signing{"HS512", crypto.SHA512}}
 	AddSigningFunc("HS256", siningMethodHS256)
 	AddSigningFunc("HS384", siningMethodHS384)
 	AddSigningFunc("HS512", siningMethodHS512)
@@ -28,9 +28,9 @@ func init() {
 
 func (s *SigningHMAC) Verify(data, sign string, key interface{}) error { // Returns nil if signature is valid
 	// Verify the key is the right type
-	keyBytes, ok := key.(string)
-	if !ok {
-		return ErrorInvalidKeyType
+	keyBytes, b := util.LiteralToBytes(key)
+	if !b {
+		return ErrorInvalidKey
 	}
 
 	// Decode signature, for comparison
@@ -57,18 +57,10 @@ func (s *SigningHMAC) Verify(data, sign string, key interface{}) error { // Retu
 	return nil
 }
 func (s *SigningHMAC) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
-	var keyBytes []byte
-	switch key.(type) {
-	case []byte:
-		keyBytes = key.([]byte)
-	case string:
-		keyBytes = []byte(key.(string))
-	default:
-		log.Println("unknow sign key type", reflect.TypeOf(key))
-
+	keyBytes, b := util.LiteralToBytes(key)
+	if !b {
 		return "", ErrorInvalidKey
 	}
-
 	if !s.Hash.Available() {
 		return "", ErrorHashUnavailable
 	}
@@ -80,8 +72,8 @@ func (s *SigningHMAC) Sign(data string, key interface{}) (string, error) { // Re
 }
 
 func (s *SigningHMAC) Alg() string { // returns the alg identifier for this method (example: 'HS256')
-	return s.Alg()
+	return s.Name
 }
 func (s *SigningHMAC) HashType() crypto.Hash {
-	return s.HashType()
+	return s.Hash
 }

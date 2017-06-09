@@ -7,33 +7,78 @@ import (
 	_ "crypto/sha256"
 	_ "crypto/sha512"
 	"encoding/base64"
+	"fmt"
 	"log"
+	"math/big"
 )
+
+var TypeECDSA struct {
+	KeySize   int
+	CurveBits int
+}
 
 type SigningECDSA struct {
 	Signing
 	KeySize   int
 	CurveBits int
-	SigningFunc
 }
 
 func init() {
 	log.Println("SigningECDSA init")
-	SigningES256 := &SigningECDSA{Signing: Signing{Name: "ES256", Hash: crypto.SHA256}}
-	SigningES384 := &SigningECDSA{Signing: Signing{Name: "ES384", Hash: crypto.SHA384}}
-	SigningES512 := &SigningECDSA{Signing: Signing{Name: "ES512", Hash: crypto.SHA512}}
+	SigningES256 := &SigningECDSA{Signing{"ES256", crypto.SHA256}, 32, 256}
+	SigningES384 := &SigningECDSA{Signing{"ES384", crypto.SHA384}, 48, 384}
+	SigningES512 := &SigningECDSA{Signing{"ES512", crypto.SHA512}, 66, 521}
 	AddSigningFunc("ES256", SigningES256)
 	AddSigningFunc("ES384", SigningES384)
 	AddSigningFunc("ES512", SigningES512)
 
 }
 
-func (s *SigningECDSA) Verify(signingString, signature string, key interface{}) error { // Returns nil if signature is valid
-	return nil
+func (s *SigningECDSA) Verify(data, sign string, key interface{}) error { // Returns nil if signature is valid
+
+	var err error
+
+	// Decode the signature
+	var sig []byte
+	if sig, err = base64.RawURLEncoding.DecodeString(sign); err != nil {
+		return err
+	}
+
+	// Get the key
+	var ecdsaKey *ecdsa.PublicKey
+	switch k := key.(type) {
+	case *ecdsa.PublicKey:
+		ecdsaKey = k
+	default:
+		return ErrorInvalidKeyType
+	}
+
+	if len(sig) != 2*s.KeySize {
+		return ErrorECDSAVerification
+	}
+
+	r1 := big.NewInt(0).SetBytes(sig[:s.KeySize])
+	s1 := big.NewInt(0).SetBytes(sig[s.KeySize:])
+
+	// Create hasher
+	if !s.Hash.Available() {
+		return ErrorHashUnavailable
+	}
+	hasher := s.Hash.New()
+	hasher.Write([]byte(data))
+
+	// Verify the signature
+	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r1, s1); verifystatus == true {
+		return nil
+	} else {
+		return ErrorECDSAVerification
+	}
+
 }
 func (s *SigningECDSA) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
-	if ecdsaKey, ok := key.(*ecdsa.PrivateKey); ok {
-		//TODO: check source
+
+	if ecdsaKey, ok := key.(*ecdsa.PrivateKey); ok && ecdsaKey != nil {
+		fmt.Println("ecdsaKey", ecdsaKey)
 		if !s.Hash.Available() {
 			return "", ErrorHashUnavailable
 		}

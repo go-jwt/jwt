@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-jwt/jwt/util"
 
+	"io/ioutil"
+	"log"
 	"testing"
 	"time"
 )
@@ -28,20 +30,21 @@ func TestClaims_VerifyAudience(t *testing.T) {
 	}
 }
 func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
-	//key, _ := ioutil.ReadFile("test/hmacTestKey")
+	key, _ := ioutil.ReadFile("test/ec512-private.pem")
+	log.Println(key)
 	// Create JWS claims
 	claims := NewClaims()
 	claims.RegisterAud("example.com", "api.example.com")
 
 	header := NewHeader()
 	header.Register(HEADER_TYPE, "JWT")
-	header.Register(HEADER_ALGORITHM, "HS256")
+	header.Register(HEADER_ALGORITHM, "ES256")
 
-	tk := NewToken(claims, header, []byte("abcdef"))
+	tk := NewToken(claims, header, key)
 
 	ser, _ := tk.Serialize()
 
-	token, e := ParseToken(ser, "abcdef")
+	token, e := ParseToken(ser, key)
 	if e != nil {
 		t.Logf("%s", e.Error())
 		return
@@ -178,7 +181,7 @@ func TestGetAndSetTime(t *testing.T) {
 	c.Register("uint64", uint64(nowUnix))
 	c.Register("float64", float64(nowUnix))
 
-	c.Register("setTime", now)
+	c.RegisterByTime("setTime", now)
 	for k := range *c {
 		v, _ := c.Find(k)
 		v1, ok := util.LiteralToTime(v)

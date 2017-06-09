@@ -47,7 +47,7 @@ func (h *Header) Register(types HeaderTypes, v interface{}) {
 }
 
 func (h *Header) Find(types HeaderTypes) (interface{}, bool) {
-	if v, b := (*c)[types]; b {
+	if v, b := (*h)[types]; b {
 		return v, true
 	}
 	return nil, false

@@ -11,6 +11,6 @@ var (
 	ErrorInvalidKeyType   = errors.New("key is of invalid type")
 	ErrorHashUnavailable  = errors.New("the requested hash function is unavailable")
 	//ErrorTransferString   = errors.New("transfer string error")
-
+	ErrorECDSAVerification = errors.New("crypto/ecdsa: verification error")
 	ErrorInvalidPrivateKey = errors.New("invalid private key")
 )

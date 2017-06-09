@@ -6,9 +6,9 @@ import (
 )
 
 type Signing struct {
-	Name        string
-	Hash        crypto.Hash
-	SigningFunc *SigningFunc
+	Name string
+	Hash crypto.Hash
+	//SigningFunc *SigningFunc
 	//_    struct{}
 }
 
@@ -32,7 +32,7 @@ func (s *Signing) HashType() crypto.Hash {
 	return s.Hash
 }
 
-type  SigningNames string
+type SigningNames string
 
 var (
 	signing     map[SigningNames]*Signing
