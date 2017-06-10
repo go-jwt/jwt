@@ -18,8 +18,8 @@ type RSPoint struct {
 }
 
 type SigningFunc interface {
-	Verify(data, sign string, key interface{}) error   // Returns nil if signature is valid
-	Sign(data string, key interface{}) (string, error) // Returns encoded signature or error
+	Verify(data, sign string, key interface{}) error   // Returns nil if string is valid
+	Sign(data string, key interface{}) (string, error) // Returns encoded string or error
 	Alg() string                                       // returns the alg identifier for this method (example: 'HS256')
 	HashType() crypto.Hash
 }

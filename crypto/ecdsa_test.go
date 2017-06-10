@@ -92,7 +92,7 @@ func TestECDSASign(t *testing.T) {
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}
-			if sig == parts[2] {
+			if string(sig) == parts[2] {
 				t.Errorf("[%v] Identical signatures\nbefore:\n%v\nafter:\n%v", data.name, parts[2], sig)
 			}
 		}

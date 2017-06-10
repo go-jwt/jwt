@@ -83,10 +83,10 @@ func (s *SigningECDSA) Sign(data string, key interface{}) (string, error) { // R
 			return "", ErrorHashUnavailable
 		}
 
-		hasher := s.Hash.New()
-		hasher.Write([]byte(data))
+		hashed := s.Hash.New()
+		hashed.Write([]byte(data))
 
-		if r1, s1, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil)); err == nil {
+		if r1, s1, err := ecdsa.Sign(rand.Reader, ecdsaKey, hashed.Sum(nil)); err == nil {
 			curveBits := ecdsaKey.Curve.Params().BitSize
 
 			if s.CurveBits != curveBits {

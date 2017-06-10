@@ -64,10 +64,10 @@ func (s *SigningHMAC) Sign(data string, key interface{}) (string, error) { // Re
 	if !s.Hash.Available() {
 		return "", ErrorHashUnavailable
 	}
-	hasher := hmac.New(s.Hash.New, []byte(keyBytes))
-	hasher.Write([]byte(data))
-	return base64.RawURLEncoding.EncodeToString(hasher.Sum(nil)), nil
-	//return strings.TrimRight(base64.URLEncoding.EncodeToString((hasher.Sum(nil))), "="), nil
+	hashed := hmac.New(s.Hash.New, []byte(keyBytes))
+	hashed.Write([]byte(data))
+
+	return base64.RawURLEncoding.EncodeToString(hashed.Sum(nil)), nil
 
 }
 

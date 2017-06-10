@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"fmt"
 )
 
 type SigningRSA struct {
@@ -19,23 +21,26 @@ func init() {
 	AddSigningFunc("RS512", signingMethodRS512)
 }
 
-func (s *SigningRSA) Alg() string { // returns the alg identifier for this method (example: 'HS256')
-	return s.Name
-}
-func (s *SigningRSA) HashType() crypto.Hash {
-	return s.Hash
-}
-
 func (s *SigningRSA) Verify(data, sign string, key interface{}) error { // Returns nil if signature is valid
 	// Verify the key is the right type
 	rsaKey, ok := key.(*rsa.PublicKey)
 	if !ok {
 		return ErrorInvalidKey
 	}
+	fmt.Println(data, sign)
+
+	st, e := base64.RawURLEncoding.DecodeString(sign)
+	if e != nil {
+		return e
+	}
+
+	if !s.Hash.Available() {
+		return ErrorHashUnavailable
+	}
 	hashed := s.Hash.New()
 	hashed.Write([]byte(data))
 
-	return rsa.VerifyPKCS1v15(rsaKey, s.Hash, hashed.Sum(nil), []byte(sign))
+	return rsa.VerifyPKCS1v15(rsaKey, s.Hash, hashed.Sum(nil), st)
 }
 
 func (s *SigningRSA) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
@@ -50,6 +55,13 @@ func (s *SigningRSA) Sign(data string, key interface{}) (string, error) { // Ret
 	if err != nil {
 		return "", err
 	}
+	return base64.RawURLEncoding.EncodeToString(sigBytes), nil
+}
 
-	return string(sigBytes), nil
+func (s *SigningRSA) Alg() string { // returns the alg identifier for this method (example: 'HS256')
+	return s.Name
+}
+
+func (s *SigningRSA) HashType() crypto.Hash {
+	return s.Hash
 }
