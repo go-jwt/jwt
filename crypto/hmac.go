@@ -47,9 +47,9 @@ func (s *SigningHMAC) Verify(data, sign string, key interface{}) error { // Retu
 	// This signing method is symmetric, so we validate the signature
 	// by reproducing the signature from the signing string and key, then
 	// comparing that against the provided signature.
-	hasher := hmac.New(s.Hash.New, []byte(keyBytes))
-	hasher.Write([]byte(sign))
-	if !hmac.Equal(sig, hasher.Sum(nil)) {
+	hashed := hmac.New(s.Hash.New, []byte(keyBytes))
+	hashed.Write([]byte(sign))
+	if !hmac.Equal(sig, hashed.Sum(nil)) {
 		return ErrorSignatureInvalid
 	}
 

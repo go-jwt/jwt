@@ -60,15 +60,15 @@ func (s *SigningECDSA) Verify(data, sign string, key interface{}) error { // Ret
 	r1 := big.NewInt(0).SetBytes(sig[:s.KeySize])
 	s1 := big.NewInt(0).SetBytes(sig[s.KeySize:])
 
-	// Create hasher
+	// Create hashed
 	if !s.Hash.Available() {
 		return ErrorHashUnavailable
 	}
-	hasher := s.Hash.New()
-	hasher.Write([]byte(data))
+	hashed := s.Hash.New()
+	hashed.Write([]byte(data))
 
 	// Verify the signature
-	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r1, s1); verifystatus == true {
+	if verifystatus := ecdsa.Verify(ecdsaKey, hashed.Sum(nil), r1, s1); verifystatus == true {
 		return nil
 	} else {
 		return ErrorECDSAVerification
