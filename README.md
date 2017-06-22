@@ -20,11 +20,18 @@ Example:
     "auth_time": 1311280969,
     "acr": "urn:mace:incommon:iap:silver"
     */
-    上面的数据串可以通过如下方式注册
+    //上面的数据串可以通过如下方式注册
 	claims.RegisterIss("https://server.example.com")
 	claims.RegisterSub("24400320")
 	claims.RegisterExp(time.Now())
 	claims.RegisterIat(time.Now())
+	
+	//获取数据串
+	claims.IssuedAt()
+	claims.Subject()
+	claims.Expiration() // or claims.ExpirationTime()
+	claims.IssuedAt()	
+	
 	//自定义一个string的acr值
 	claims.Register("acr","urn:mace:incommon:iap:silver")
 	claims.Register("nonce","a string value")
@@ -45,7 +52,7 @@ Example:
 
 
 
-    当接受到一串序列化token时，
+    //当接受到一串序列化token时:
 	//通过key和序列化token，反序列化得到token
 	newToken, _ := ParseToken(serializedToken, "abcdef")
 
