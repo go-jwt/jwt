@@ -60,6 +60,23 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 	// Create JWS claims
 	claims := NewClaims()
 	claims.RegisterAud("example.com", "api.example.com")
+	//"iss": "https://server.example.com",
+	//"sub": "24400320",
+	//"aud": "s6BhdRkqt3",
+	//"nonce": "n-0S6_WzA2Mj",
+	//"exp": 1311281970,
+	//"iat": 1311280970,
+	//"auth_time": 1311280969,
+	//"acr": "urn:mace:incommon:iap:silver"
+
+	claims.RegisterIss("https://server.example.com")
+	claims.RegisterSub("24400320")
+	claims.RegisterExp(time.Now())
+	claims.RegisterIat(time.Now())
+	claims.Register("acr", "urn:mace:incommon:iap:silver")
+	claims.Register("nonce", "a string value")
+	claims.RegisterByTime("auth_time", time.Now())
+
 	header := NewHeader()
 	header.Register(HEADER_TYPE, "JWT")
 	header.Register(HEADER_ALGORITHM, "HS256")
@@ -71,7 +88,7 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 	newToken, _ := ParseToken(serializedToken, "abcdef")
 
 	c := newToken.Claims()
-
+	newToken.Header()
 	// Get Audience
 	aud, ok := c.Audience()
 	if !ok {
@@ -79,7 +96,7 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 		// Fails
 		t.Fail()
 	}
-
+	log.Println(c)
 	t.Logf("aud len(): %d", len(aud))
 	t.Logf("aud Value: %s", aud)
 	t.Logf("aud Type : %T", aud)
