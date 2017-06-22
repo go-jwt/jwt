@@ -7,7 +7,7 @@ import (
 
 	"log"
 
-	"github.com/go-jwt/jwt/crypto"
+	"gopkg.in/jwt.v1/crypto"
 )
 
 const (

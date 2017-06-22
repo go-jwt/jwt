@@ -3,7 +3,7 @@ package jwt
 import (
 	_ "crypto"
 
-	"github.com/go-jwt/jwt/util"
+	"gopkg.in/jwt.v1/util"
 
 	"io/ioutil"
 	"log"

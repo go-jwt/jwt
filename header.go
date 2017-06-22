@@ -3,7 +3,7 @@ package jwt
 import (
 	"encoding/json"
 
-	"github.com/go-jwt/jwt/crypto"
+	"gopkg.in/jwt.v1/crypto"
 )
 
 //type Header struct {

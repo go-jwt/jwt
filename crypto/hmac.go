@@ -8,7 +8,7 @@ import (
 	"encoding/base64"
 	"log"
 
-	"github.com/go-jwt/jwt/util"
+	"gopkg.in/jwt.v1/util"
 )
 
 type SigningHMAC struct {

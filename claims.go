@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-jwt/jwt/util"
+	"gopkg.in/jwt.v1/util"
 )
 
 //type Claims struct {

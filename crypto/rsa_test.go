@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/go-jwt/jwt/util"
+	"gopkg.in/jwt.v1/util"
 )
 
 var rsaTestData = []struct {
