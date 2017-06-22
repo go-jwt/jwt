@@ -1,6 +1,6 @@
 # jwt
 
-import "gopkg.in/jwt.v1"
+> 	import "gopkg.in/jwt.v1"
 
 	claims := NewClaims()  
 	claims.RegisterAud("example.com", "api.example.com")  
