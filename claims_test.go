@@ -73,6 +73,11 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 	claims.RegisterSub("24400320")
 	claims.RegisterExp(time.Now())
 	claims.RegisterIat(time.Now())
+	claims.IssuedAt()
+	claims.Subject()
+	claims.Expiration() // or claims.ExpirationTime()
+	claims.IssuedAt()
+
 	claims.Register("acr", "urn:mace:incommon:iap:silver")
 	claims.Register("nonce", "a string value")
 	claims.RegisterByTime("auth_time", time.Now())
