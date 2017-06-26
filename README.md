@@ -1,9 +1,9 @@
 # 中国最好的JWT包
 
-    How to use it
-
-Example:
-
+    How to use it?
+## 获取包
+	go get -u gopkg.in/jwt.v1
+## Example:
     //获取一个claims
     claims := NewClaims()
     //注册一个域名
