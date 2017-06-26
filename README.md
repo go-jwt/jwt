@@ -1,6 +1,6 @@
 # 中国最好的JWT包
-
-    How to use it?
+	后期会加上jws，jwa，jwe等协议的支持，敬请期待
+# How to use it?
 ## 获取包
 	go get -u gopkg.in/jwt.v1
 ## Example:
