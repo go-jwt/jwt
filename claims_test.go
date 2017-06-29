@@ -6,7 +6,6 @@ import (
 	"gopkg.in/jwt.v1/util"
 
 	"io/ioutil"
-	"log"
 	"testing"
 	"time"
 )
@@ -31,7 +30,6 @@ func TestClaims_VerifyAudience(t *testing.T) {
 }
 func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/ec512-private.pem")
-	util.Debug(key)
 	// Create JWS claims
 	claims := NewClaims()
 	claims.RegisterAud("example.com", "api.example.com")

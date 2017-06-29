@@ -6,6 +6,8 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
+
+	"gopkg.in/jwt.v1/util"
 )
 
 type SigningRSA struct {
@@ -13,6 +15,7 @@ type SigningRSA struct {
 }
 
 func init() {
+	util.Debug("SigningRSA init")
 	signingMethodRS256 := &SigningRSA{Signing{"RS256", crypto.SHA256}}
 	signingMethodRS384 := &SigningRSA{Signing{"RS384", crypto.SHA384}}
 	signingMethodRS512 := &SigningRSA{Signing{"RS512", crypto.SHA512}}
