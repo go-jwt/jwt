@@ -10,9 +10,15 @@ var debug = true
 var output = ""
 
 func init() {
-	debug = *flag.Bool("debug", true, "open the log output")
-	output = *flag.String("output", "", "output path")
+	SetDebug(*flag.Bool("debug", true, "open the log output"))
+	SetOutput(*flag.String("output", "", "output path"))
+}
 
+func SetDebug(flag bool) {
+	debug = flag
+}
+
+func SetOutput(s string) {
 	if output != "" {
 		file, e := os.OpenFile(output, os.O_WRONLY|os.O_CREATE|os.O_APPEND|os.O_SYNC, os.ModeAppend)
 		if e == nil {
@@ -22,7 +28,6 @@ func init() {
 		}
 		Debug("default log output")
 	}
-
 }
 
 func Debug(v ...interface{}) {
