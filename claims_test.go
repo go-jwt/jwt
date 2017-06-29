@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"testing"
 	"time"
+
+	"gopkg.in/jwt.v1/crypto"
 )
 
 func TestClaims_VerifyAudience(t *testing.T) {
@@ -82,13 +84,16 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 
 	header := NewHeader()
 	header.Register(HEADER_TYPE, "JWT")
-	header.Register(HEADER_ALGORITHM, "HS256")
+	header.Register(HEADER_ALGORITHM, crypto.HS256)
 	token := NewToken(claims, header, "abcdef")
 
 	serializedToken, _ := token.Serialize()
 
 	// Unmarshal JSON
-	newToken, _ := ParseToken(serializedToken, "abcdef")
+	newToken, e := ParseToken(serializedToken, "abcdef")
+	if e != nil {
+		util.Debug(e)
+	}
 
 	c := newToken.Claims()
 	newToken.Header()

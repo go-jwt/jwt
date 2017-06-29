@@ -45,6 +45,10 @@ func NewToken(v ...interface{}) *token {
 			case *Header:
 				token.header = v.(*Header)
 				token.Token[TOKEN_HEADER] = token.header.Base64()
+			case []string:
+				token.Token = TokenString(v.([]string))
+			case TokenString:
+				token.Token = v.(TokenString)
 			default:
 				token.key = v
 			}
