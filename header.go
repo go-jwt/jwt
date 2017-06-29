@@ -37,7 +37,14 @@ func NewHeader() *Header {
 
 func NewJWTHeader() *Header {
 	h := NewHeader()
-	h.Register("typ", "JWT")
+	h.Register(HEADER_TYPE, "JWT")
+	return h
+}
+
+func DefaultAlgHeader() *Header {
+	h := NewHeader()
+	h.Register(HEADER_TYPE, "JWT")
+	h.Register(HEADER_ALGORITHM, "HS256")
 	return h
 }
 

@@ -25,17 +25,17 @@ type JWT interface {
 type TokenString []string
 type KeyByte []byte
 
-type Token struct {
+type token struct {
 	header *Header
 	claims *Claims
 	Token  TokenString
-	Key    interface{}
+	key    interface{}
 	JWT
 }
 
 //parse claims header parameters
-func NewToken(v ...interface{}) *Token {
-	token := new(Token)
+func NewToken(v ...interface{}) *token {
+	token := new(token)
 	token.Token = make([]string, TOKEN_MAX)
 	if len(v) > 0 {
 		for _, v := range v {
@@ -46,17 +46,8 @@ func NewToken(v ...interface{}) *Token {
 			case *Header:
 				token.header = v.(*Header)
 				token.Token[TOKEN_HEADER] = token.header.Base64()
-			//case []byte:
-			//	token.Key = KeyByte(v.([]byte))
-			//case KeyByte:
-			//	fmt.Println("type is", reflect.TypeOf(v))
-			//	token.Key = v.(KeyByte)
-			case []string:
-				token.Token = TokenString(v.([]string))
-			case TokenString:
-				token.Token = v.(TokenString)
 			default:
-				token.Key = v
+				token.key = v
 			}
 		}
 	}
@@ -64,8 +55,8 @@ func NewToken(v ...interface{}) *Token {
 	return token
 }
 
-func ParseToken(serialized string, key interface{}) (*Token, error) {
-	log.Println("ParseToken")
+func ParseToken(serialized string, key interface{}) (*token, error) {
+	util.Debug("ParseToken")
 	var err error
 
 	token := stringSegment(serialized)
@@ -74,12 +65,12 @@ func ParseToken(serialized string, key interface{}) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(header)
+	util.Debug(header)
 	claims, err := ParseClaims(token[TOKEN_CLAIMS])
 	if err != nil {
 		return nil, err
 	}
-	log.Println(claims)
+	util.Debug(claims)
 	t := NewToken(header, claims, token, key)
 	if err = t.Verify(); err != nil {
 		return nil, err
@@ -89,26 +80,26 @@ func ParseToken(serialized string, key interface{}) (*Token, error) {
 
 }
 
-func (t *Token) Verify() error {
+func (t *token) Verify() error {
 	raw := stringConnection(t.Token[TOKEN_HEADER], t.Token[TOKEN_CLAIMS])
 	f, err := crypto.GetSigningFunc(t.header.Alg())
 	if err != nil {
 		return err
 	}
 
-	err = f.Verify(t.Token[TOKEN_SIGN], raw, t.Key)
+	err = f.Verify(t.Token[TOKEN_SIGN], raw, t.key)
 	return err
 }
 
-func (t *Token) Claims() *Claims {
+func (t *token) Claims() *Claims {
 	return t.claims
 }
 
-func (t *Token) Header() *Header {
+func (t *token) Header() *Header {
 	return t.header
 }
 
-func (t *Token) Serialize() (string, error) {
+func (t *token) Serialize() (string, error) {
 
 	t.Token[TOKEN_HEADER] = t.header.Base64()
 	t.Token[TOKEN_CLAIMS] = t.claims.Base64()
@@ -118,7 +109,7 @@ func (t *Token) Serialize() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sign, err := f.Sign(raw, t.Key)
+	sign, err := f.Sign(raw, t.key)
 
 	if err != nil {
 		return "", err
@@ -126,6 +117,10 @@ func (t *Token) Serialize() (string, error) {
 	t.Token[TOKEN_SIGN] = sign
 
 	return stringConnection(t.Token[TOKEN_HEADER], t.Token[TOKEN_CLAIMS], t.Token[TOKEN_SIGN]), nil
+}
+
+func (t *token) SetKey(key interface{}) {
+	t.key = key
 }
 
 func stringConnection(s ...string) string {

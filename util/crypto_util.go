@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"log"
 )
 
 // ECDSA parsing errors.
@@ -31,7 +30,7 @@ func ParseECPrivateKeyFromPEM(key []byte) (*ecdsa.PrivateKey, error) {
 	if parsedKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil {
 		return parsedKey, nil
 	} else {
-		log.Println(err)
+		util.Debug(err)
 	}
 	return nil, ErrorNotECPrivateKey
 

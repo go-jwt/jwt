@@ -202,15 +202,15 @@ func (c *Claims) RegisterJti(v string) {
 func (c *Claims) JWT_ID() (string, bool) {
 	return c.FindToString(CLAIM_JWT_ID)
 }
-func (c *Claims) Validate(now time.Time, expLeeway, nbfLeeway time.Duration) error {
+func (c *Claims) Validate(now time.Time, expTime, nbfTime time.Duration) error {
 	if exp, b := c.Expiration(); b {
-		if now.After(exp.Add(expLeeway)) {
+		if now.After(exp.Add(expTime)) {
 			return ErrorTokenIsExpired
 		}
 	}
 
 	if nbf, b := c.NotBefore(); b {
-		if !now.After(nbf.Add(-nbfLeeway)) {
+		if !now.After(nbf.Add(-nbfTime)) {
 			return ErrorTokenNotYetValid
 		}
 	}

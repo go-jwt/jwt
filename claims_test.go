@@ -31,7 +31,7 @@ func TestClaims_VerifyAudience(t *testing.T) {
 }
 func TestMultipleAudienceBug_AfterMarshal(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/ec512-private.pem")
-	log.Println(key)
+	util.Debug(key)
 	// Create JWS claims
 	claims := NewClaims()
 	claims.RegisterAud("example.com", "api.example.com")
@@ -101,7 +101,7 @@ func TestMultipleAudienceFix_AfterMarshal(t *testing.T) {
 		// Fails
 		t.Fail()
 	}
-	log.Println(c)
+	util.Debug(c)
 	t.Logf("aud len(): %d", len(aud))
 	t.Logf("aud Value: %s", aud)
 	t.Logf("aud Type : %T", aud)

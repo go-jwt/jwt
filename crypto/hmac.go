@@ -16,7 +16,7 @@ type SigningHMAC struct {
 }
 
 func init() {
-	log.Println("SigningHMAC init")
+	util.Debug("SigningHMAC init")
 	siningMethodHS256 := &SigningHMAC{Signing{"HS256", crypto.SHA256}}
 	siningMethodHS384 := &SigningHMAC{Signing{"HS384", crypto.SHA384}}
 	siningMethodHS512 := &SigningHMAC{Signing{"HS512", crypto.SHA512}}

@@ -8,14 +8,10 @@ import (
 	_ "crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"math/big"
-)
 
-var TypeECDSA struct {
-	KeySize   int
-	CurveBits int
-}
+	"gopkg.in/jwt.v1/util"
+)
 
 type SigningECDSA struct {
 	Signing
@@ -24,7 +20,7 @@ type SigningECDSA struct {
 }
 
 func init() {
-	log.Println("SigningECDSA init")
+	util.Debug("SigningECDSA init")
 	SigningES256 := &SigningECDSA{Signing{"ES256", crypto.SHA256}, 32, 256}
 	SigningES384 := &SigningECDSA{Signing{"ES384", crypto.SHA384}, 48, 384}
 	SigningES512 := &SigningECDSA{Signing{"ES512", crypto.SHA512}, 66, 521}
