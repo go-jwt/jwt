@@ -6,7 +6,6 @@ import (
 	_ "crypto/sha256"
 	_ "crypto/sha512"
 	"encoding/base64"
-	"log"
 
 	"gopkg.in/jwt.v1/util"
 )

@@ -5,9 +5,8 @@ import (
 
 	"fmt"
 
-	"log"
-
 	"gopkg.in/jwt.v1/crypto"
+	"gopkg.in/jwt.v1/util"
 )
 
 const (

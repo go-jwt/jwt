@@ -30,7 +30,7 @@ func ParseECPrivateKeyFromPEM(key []byte) (*ecdsa.PrivateKey, error) {
 	if parsedKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil {
 		return parsedKey, nil
 	} else {
-		util.Debug(err)
+		Debug(err)
 	}
 	return nil, ErrorNotECPrivateKey
 

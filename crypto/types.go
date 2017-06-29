@@ -1,6 +1,5 @@
 package crypto
 
-
 const (
 	NONE = "none" //plaintext (unprotected) without signature / encryption
 
