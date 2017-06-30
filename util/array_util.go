@@ -3,7 +3,7 @@ package util
 import (
 	"reflect"
 
-	"github.com/golang/dep/vendor/github.com/pkg/errors"
+	"errors"
 )
 
 var (

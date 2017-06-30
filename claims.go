@@ -27,23 +27,16 @@ const (
 )
 
 func NewClaims() *Claims {
-	//claims := new(Claims)
-	//claims.ClaimData = make(map[ClaimNames]interface{}, ClaimMax)
 	tmp := (Claims)(make(map[ClaimNames]interface{}, ClaimMax))
 
 	return &tmp
 }
 
 func (c *Claims) Register(names ClaimNames, v interface{}) {
-	//switch v.(type) {
-	//case time.Time:
-	//	c.ClaimData[names] = v.(time.Time).Unix()
-	//	return CaimsErrorTimeFunc
-	//default:
-	//	c.ClaimData[names] = v
-	//}
+	if c == nil {
+		c = NewClaims()
+	}
 	(*c)[names] = v
-
 }
 func (c *Claims) RegisterByTime(names ClaimNames, time time.Time) {
 	(*c)[names] = time.Unix()
@@ -51,7 +44,10 @@ func (c *Claims) RegisterByTime(names ClaimNames, time time.Time) {
 }
 
 func (c *Claims) Find(names ClaimNames) (v interface{}, b bool) {
-	v, b = (*c)[names]
+	if c != nil {
+		v, b = (*c)[names]
+	}
+
 	return
 }
 
@@ -212,13 +208,14 @@ func (c *Claims) Base64() string {
 }
 
 func (c *Claims) ValidateIssuer(jwt JWT) error {
-	v2, ok2 := jwt.Claims().Issuer()
-	if v, ok := c.Issuer(); ok && ok2 &&
-		v2 != v {
-		util.Debug(v, v2)
-		return ErrorInvalidISSClaim
+	if v, ok := jwt.Claims().Issuer(); ok {
+		if v2, ok2 := c.Issuer(); ok2 && v2 != v {
+			util.Debug(v, v2)
+			return ErrorInvalidISSClaim
+		}
 	}
 	return nil
+
 }
 
 func (c *Claims) ValidateExpiration(jwt JWT) error {
@@ -232,41 +229,42 @@ func (c *Claims) ValidateExpiration(jwt JWT) error {
 }
 
 func (c *Claims) ValidateIssuedAt(jwt JWT) error {
-	v2, ok2 := jwt.Claims().IssuedAt()
-	if v, ok := c.IssuedAt(); ok && ok2 &&
-		v2 != v {
-		util.Debug(v, v2)
-		return ErrorInvalidISSClaim
+	if v, ok := jwt.Claims().IssuedAt(); ok {
+		if v2, ok2 := c.IssuedAt(); ok2 && !v2.Equal(v) {
+			util.Debug(v, v2)
+			return ErrorInvalidIATClaim
+		}
 	}
 	return nil
 }
 
 func (c *Claims) ValidateSubject(jwt JWT) error {
-	v2, ok2 := jwt.Claims().Subject()
-	if v, ok := c.Subject(); ok && ok2 &&
-		v2 != v {
-		util.Debug(v, v2)
-		return ErrorInvalidSUBClaim
+	if v, ok := jwt.Claims().Subject(); ok {
+		if v2, ok2 := c.Subject(); ok2 && v2 != v {
+			util.Debug(v, v2)
+			return ErrorInvalidSUBClaim
+		}
 	}
 	return nil
 }
 
 func (c *Claims) ValidateJWTID(jwt JWT) error {
-	v2, ok2 := jwt.Claims().JWTID()
-	if v, ok := c.JWTID(); ok && ok2 &&
-		v2 != v {
-		util.Debug(v, v2)
-		return ErrorInvalidJTIClaim
+	if v, ok := jwt.Claims().JWTID(); ok {
+		if v2, ok2 := c.JWTID(); ok2 && v2 != v {
+			util.Debug(v, v2)
+			return ErrorInvalidJTIClaim
+		}
 	}
 	return nil
 }
 
 func (c *Claims) ValidateAudience(jwt JWT) error {
-	v2, ok2 := jwt.Claims().Audience()
-	if v, ok := c.Audience(); ok && ok2 {
-		if e := util.ArrayCompare(v, v2); e != nil {
-			util.Debug(e, v, v2)
-			return ErrorInvalidSUBClaim
+	if v, ok := jwt.Claims().Audience(); ok {
+		if v2, ok2 := c.Audience(); ok2 {
+			if e := util.ArrayCompare(v, v2); e != nil {
+				util.Debug(e, v, v2)
+				return ErrorInvalidAUDClaim
+			}
 		}
 	}
 	return nil
@@ -283,12 +281,18 @@ func (c *Claims) ValidateNotBefore(jwt JWT) error {
 }
 
 func (c *Claims) Validate(jwt JWT) error {
-	if e := c.ValidateAudience(jwt); e != nil {
-		return e
-	}
 	if e := c.ValidateExpiration(jwt); e != nil {
 		return e
 	}
+
+	if e := c.ValidateNotBefore(jwt); e != nil {
+		return e
+	}
+
+	if e := c.ValidateAudience(jwt); e != nil {
+		return e
+	}
+
 	if e := c.ValidateIssuedAt(jwt); e != nil {
 		return e
 	}
@@ -298,9 +302,7 @@ func (c *Claims) Validate(jwt JWT) error {
 	if e := c.ValidateJWTID(jwt); e != nil {
 		return e
 	}
-	if e := c.ValidateNotBefore(jwt); e != nil {
-		return e
-	}
+
 	if e := c.ValidateSubject(jwt); e != nil {
 		return e
 	}

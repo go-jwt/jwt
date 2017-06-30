@@ -5,6 +5,8 @@ import (
 
 	"fmt"
 
+	"log"
+
 	"gopkg.in/jwt.v1/crypto"
 	"gopkg.in/jwt.v1/util"
 )
@@ -41,14 +43,21 @@ func NewToken(v ...interface{}) *token {
 			case *Claims:
 				token.claims = v.(*Claims)
 				token.Token[TOKEN_CLAIMS] = token.claims.Base64()
+			//case Claims:
+			//	*token.claims = v.(Claims)
+			//	token.Token[TOKEN_CLAIMS] = token.claims.Base64()
 			case *Header:
 				token.header = v.(*Header)
 				token.Token[TOKEN_HEADER] = token.header.Base64()
+			//case Header:
+			//	*token.header = v.(Header)
+			//	token.Token[TOKEN_HEADER] = token.header.Base64()
 			case []string:
 				token.Token = TokenString(v.([]string))
 			case TokenString:
 				token.Token = v.(TokenString)
 			default:
+				log.Println("key")
 				token.key = v
 			}
 		}

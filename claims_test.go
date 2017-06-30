@@ -25,7 +25,7 @@ func TestClaims_VerifyAudience(t *testing.T) {
 		4: {[]string{"example.com"}, []string{"example.com", "foo.com"}, true},
 	}
 	for i, v := range tests {
-		if x := verifyAudience(v.a, v.b); x != v.v {
+		if x := util.ArrayCompare(v.a, v.b); x != nil {
 			t.Fatalf("#%d: wanted %t, got %t", i, v.v, x)
 		}
 	}
@@ -140,22 +140,70 @@ func TestSingleAudienceFix_AfterMarshal(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	//now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Now()
 	before, after := now.Add(-time.Minute), now.Add(time.Minute)
-	leeway := 10 * time.Second
 
 	exp := func(t time.Time) Claims {
 		claims := NewClaims()
 		claims.RegisterExp(t)
 		return *claims
-		//return Claims{ClaimData: map[string]interface{"exp": t.Unix()}}
 	}
 	nbf := func(t time.Time) Claims {
 		claims := NewClaims()
 		claims.RegisterNbf(t)
 		return *claims
+	}
 
-		//return jwt.Claims{"nbf": t.Unix()}
+	base := func(ss ...string) *Claims {
+		claims := NewClaims()
+		claims.RegisterAud("example.com", "api.example.com")
+		claims.RegisterSub("sub")
+		claims.RegisterJti("jti")
+		claims.RegisterIss("iss")
+		claims.RegisterIat(now)
+		return claims
+	}
+
+	aud := func(ss ...string) Claims {
+		claims := NewClaims()
+		claims.RegisterAud(ss...)
+		return *claims
+	}
+
+	sub := func(ss string) Claims {
+		claims := NewClaims()
+		if ss != "" {
+			claims.RegisterSub(ss)
+		}
+
+		return *claims
+	}
+
+	jti := func(ss string) Claims {
+		claims := NewClaims()
+		if ss != "" {
+			claims.RegisterJti(ss)
+		}
+
+		return *claims
+	}
+
+	iat := func(time2 *time.Time) Claims {
+		claims := NewClaims()
+		if time2 != nil {
+			claims.RegisterIat(*time2)
+		}
+
+		return *claims
+	}
+	iss := func(ss string) Claims {
+		claims := NewClaims()
+		if ss != "" {
+			claims.RegisterIss(ss)
+		}
+
+		return *claims
 	}
 
 	var tests = []struct {
@@ -170,25 +218,34 @@ func TestValidate(t *testing.T) {
 		{desc: "exp == nil && nbf == nil", c: Claims{}, now: now, err: nil},
 
 		{desc: "now > exp", now: now, c: exp(before), err: ErrorTokenIsExpired},
-		{desc: "now = exp", now: now, c: exp(now), err: nil},
 		{desc: "now < exp", now: now, c: exp(after), err: nil},
 
 		{desc: "nbf < now", c: nbf(before), now: now, err: nil},
-		{desc: "nbf = now", c: nbf(now), now: now, err: ErrorTokenNotYetValid},
 		{desc: "nbf > now", c: nbf(after), now: now, err: ErrorTokenNotYetValid},
 
-		// test for nbf-x < now <= exp+y
-		{desc: "now < exp+x", now: now.Add(leeway - time.Second), expLeeway: leeway, c: exp(now), err: nil},
-		{desc: "now = exp+x", now: now.Add(leeway), expLeeway: leeway, c: exp(now), err: nil},
-		{desc: "now > exp+x", now: now.Add(leeway + time.Second), expLeeway: leeway, c: exp(now), err: ErrorTokenIsExpired},
+		{desc: "aud != aud", now: now, c: aud("example.com"), err: ErrorInvalidAUDClaim},
+		{desc: "aud = nil", now: now, c: aud(), err: nil},
+		{desc: "aud = aud", now: now, c: aud("example.com", "api.example.com"), err: nil},
 
-		{desc: "nbf-x > now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway + time.Second), err: nil},
-		{desc: "nbf-x = now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway), err: ErrorTokenNotYetValid},
-		{desc: "nbf-x < now", c: nbf(now), nbfLeeway: leeway, now: now.Add(-leeway - time.Second), err: ErrorTokenNotYetValid},
+		{desc: "sub != sub", now: now, c: sub("111"), err: ErrorInvalidSUBClaim},
+		{desc: "sub = nil", now: now, c: sub(""), err: nil},
+		{desc: "sub = sub", now: now, c: sub("sub"), err: nil},
+
+		{desc: "jti != jti", now: now, c: jti("222"), err: ErrorInvalidJTIClaim},
+		{desc: "jti = jti", now: now, c: jti(""), err: nil},
+		{desc: "jti = jti", now: now, c: jti("jti"), err: nil},
+
+		{desc: "iss != iss", now: now, c: iss("333"), err: ErrorInvalidISSClaim},
+		{desc: "iss = nil", now: now, c: iss(""), err: nil},
+		{desc: "iss = iss", now: now, c: iss("iss"), err: nil},
+
+		{desc: "iat != iat", now: now, c: iat(&before), err: ErrorInvalidIATClaim},
+		{desc: "iat = nil", now: now, c: iat(nil), err: nil},
+		{desc: "iat = iat", now: now, c: iat(&now), err: nil},
 	}
-
+	tkb := NewToken(base())
 	for i, tt := range tests {
-		if got, want := tt.c.Validate(tt.now, tt.expLeeway, tt.nbfLeeway), tt.err; got != want {
+		if got, want := tt.c.Validate(tkb), tt.err; got != want {
 			t.Errorf("%d - %q: got %v want %v", i, tt.desc, got, want)
 		}
 	}
