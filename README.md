@@ -10,17 +10,17 @@
 	claims.RegisterAud("example.com", "api.example.com")
 
 
-    /*
-    "iss": "https://server.example.com",
-    "sub": "24400320",
-    "aud": "s6BhdRkqt3",
-    "nonce": "n-0S6_WzA2Mj",
-    "exp": 1311281970,
-    "iat": 1311280970,
-    "auth_time": 1311280969,
-    "acr": "urn:mace:incommon:iap:silver"
-    */
-    //上面的数据串可以通过如下方式注册
+	/*
+	"iss": "https://server.example.com",
+	"sub": "24400320",
+	"aud": "s6BhdRkqt3",
+	"nonce": "n-0S6_WzA2Mj",
+	"exp": 1311281970,
+	"iat": 1311280970,
+	"auth_time": 1311280969,
+	"acr": "urn:mace:incommon:iap:silver"
+	*/
+    	//上面的数据串可以通过如下方式注册
 	claims.RegisterIss("https://server.example.com")
 	claims.RegisterSub("24400320")
 	claims.RegisterExp(time.Now())
@@ -44,19 +44,26 @@
 	header.Register(HEADER_TYPE, "JWT")
 	//指定压缩方式
 	header.Register(HEADER_ALGORITHM, "HS256")
+	//或者
+	header := DefaultHeader()
+	
 	//使用claims，header，key 来创建token
 	token := NewToken(claims, header, "abcdef")
 
-    //使用序列化token用于传输
+    	//使用序列化token用于传输
 	serializedToken, _ := token.Serialize()
 
 
 
-    //当接受到一串序列化token时:
+    	//当接受到一串序列化token时:
 	//通过key和序列化token，反序列化得到token
 	newToken, _ := ParseToken(serializedToken, "abcdef")
 
-    //获取claims
+    	//获取claims
 	newToken.Claims()
 	//获取header
 	newToken.Header()
+
+	//验证claims
+	claims.Validate(newToken)
+ 
