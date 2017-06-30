@@ -29,7 +29,6 @@ type token struct {
 	claims *Claims
 	Token  TokenString
 	key    interface{}
-	JWT
 }
 
 //parse claims header parameters

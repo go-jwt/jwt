@@ -2,19 +2,11 @@ package crypto
 
 import (
 	"crypto"
-	"math/big"
 )
 
 type Signing struct {
 	Name string
 	Hash crypto.Hash
-	//SigningFunc *SigningFunc
-	//_    struct{}
-}
-
-type RSPoint struct {
-	S *big.Int
-	R *big.Int
 }
 
 type SigningFunc interface {
@@ -59,23 +51,10 @@ func MakeSigningFunc() map[SigningNames]SigningFunc {
 	return nil
 }
 
-//func AddSigning(names SigningNames, method *Signing) {
-//	MakeSigning()
-//	signing[names] = method
-//}
-
 func AddSigningFunc(names SigningNames, method SigningFunc) {
 	MakeSigningFunc()
 	signingFunc[names] = method
 }
-
-//
-//func GetSigning(names SigningNames) *Signing {
-//	if m, b := signing[names]; b == true {
-//		return m
-//	}
-//	return nil
-//}
 
 func GetSigningFunc(names SigningNames) (SigningFunc, error) {
 	if m, b := signingFunc[names]; b == true {

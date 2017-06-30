@@ -199,28 +199,9 @@ func (c *Claims) RegisterJti(v string) {
  *
  * @return the JWT {jti,true} value or {"",false} if not present.
  */
-func (c *Claims) JWT_ID() (string, bool) {
+func (c *Claims) JWTID() (string, bool) {
 	return c.FindToString(CLAIM_JWT_ID)
 }
-func (c *Claims) Validate(now time.Time, expTime, nbfTime time.Duration) error {
-	if exp, b := c.Expiration(); b {
-		if now.After(exp.Add(expTime)) {
-			return ErrorTokenIsExpired
-		}
-	}
-
-	if nbf, b := c.NotBefore(); b {
-		if !now.After(nbf.Add(-nbfTime)) {
-			return ErrorTokenNotYetValid
-		}
-	}
-	return nil
-}
-
-func (c *Claims) VerifyAudience(v string) {
-
-}
-
 func (c *Claims) Base64() string {
 	b, e := json.Marshal(*c)
 	if e != nil {
@@ -230,6 +211,102 @@ func (c *Claims) Base64() string {
 
 }
 
+func (c *Claims) ValidateIssuer(jwt JWT) error {
+	v2, ok2 := jwt.Claims().Issuer()
+	if v, ok := c.Issuer(); ok && ok2 &&
+		v2 != v {
+		util.Debug(v, v2)
+		return ErrorInvalidISSClaim
+	}
+	return nil
+}
+
+func (c *Claims) ValidateExpiration(jwt JWT) error {
+	if exp, b := c.Expiration(); b {
+		if t := time.Now(); exp.Before(t) {
+			util.Debug(exp, t)
+			return ErrorTokenIsExpired
+		}
+	}
+	return nil
+}
+
+func (c *Claims) ValidateIssuedAt(jwt JWT) error {
+	v2, ok2 := jwt.Claims().IssuedAt()
+	if v, ok := c.IssuedAt(); ok && ok2 &&
+		v2 != v {
+		util.Debug(v, v2)
+		return ErrorInvalidISSClaim
+	}
+	return nil
+}
+
+func (c *Claims) ValidateSubject(jwt JWT) error {
+	v2, ok2 := jwt.Claims().Subject()
+	if v, ok := c.Subject(); ok && ok2 &&
+		v2 != v {
+		util.Debug(v, v2)
+		return ErrorInvalidSUBClaim
+	}
+	return nil
+}
+
+func (c *Claims) ValidateJWTID(jwt JWT) error {
+	v2, ok2 := jwt.Claims().JWTID()
+	if v, ok := c.JWTID(); ok && ok2 &&
+		v2 != v {
+		util.Debug(v, v2)
+		return ErrorInvalidJTIClaim
+	}
+	return nil
+}
+
+func (c *Claims) ValidateAudience(jwt JWT) error {
+	v2, ok2 := jwt.Claims().Audience()
+	if v, ok := c.Audience(); ok && ok2 {
+		if e := util.ArrayCompare(v, v2); e != nil {
+			util.Debug(e, v, v2)
+			return ErrorInvalidSUBClaim
+		}
+	}
+	return nil
+}
+
+func (c *Claims) ValidateNotBefore(jwt JWT) error {
+	if nbf, b := c.NotBefore(); b {
+		if t := time.Now(); nbf.After(t) {
+			util.Debug(nbf, t)
+			return ErrorTokenNotYetValid
+		}
+	}
+	return nil
+}
+
+func (c *Claims) Validate(jwt JWT) error {
+	if e := c.ValidateAudience(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateExpiration(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateIssuedAt(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateIssuer(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateJWTID(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateNotBefore(jwt); e != nil {
+		return e
+	}
+	if e := c.ValidateSubject(jwt); e != nil {
+		return e
+	}
+	return nil
+}
+
 func ParseClaims(ser string) (*Claims, error) {
 	claims := new(Claims)
 	e := ParseBase64(ser, claims)
@@ -237,57 +314,5 @@ func ParseClaims(ser string) (*Claims, error) {
 		return nil, e
 	}
 	return claims, nil
-
-}
-
-func verifyAudience(lef, rig interface{}) bool {
-	switch lef.(type) {
-	case string:
-		l1 := lef.(string)
-		if r1, flag := rig.(string); flag {
-			return l1 == r1
-		}
-		r2, flag := rig.([]string)
-		return flag && verifyInArray(l1, r2)
-	case []string:
-		l2 := lef.([]string)
-		if r1, flag := rig.(string); flag {
-			return l2[0] == r1
-		}
-		r2, flag := rig.([]string)
-		return flag && verifyArraies(l2, r2)
-	}
-	return false
-}
-
-func verifyInArray(lef string, rig []string) bool {
-	for _, v := range rig {
-		if lef == v {
-			return true
-		}
-	}
-	return false
-}
-
-func verifyArraies(lef, rig []string) bool {
-	s := len(lef)
-	if s > len(rig) {
-		return false
-	}
-
-	f := 0
-	for _, lefv := range lef {
-		for _, rigv := range rig {
-			if lefv == rigv {
-				f++
-				break
-
-			}
-		}
-	}
-	if s != f {
-		return false
-	}
-	return true
 
 }
