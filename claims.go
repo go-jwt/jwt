@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"encoding/base64"
+
 	"gopkg.in/jwt.v1/util"
 )
 
@@ -198,13 +200,9 @@ func (c *Claims) RegisterJti(v string) {
 func (c *Claims) JWTID() (string, bool) {
 	return c.FindToString(CLAIM_JWT_ID)
 }
-func (c *Claims) Base64() string {
-	b, e := json.Marshal(*c)
-	if e != nil {
-		return ""
-	}
-	return Base64Encode(b)
 
+func (c *Claims) Base64() string {
+	return marshalJsonBase64(*c)
 }
 
 func (c *Claims) ValidateIssuer(jwt JWT) error {
@@ -311,10 +309,32 @@ func (c *Claims) Validate(jwt JWT) error {
 
 func ParseClaims(ser string) (*Claims, error) {
 	claims := new(Claims)
-	e := ParseBase64(ser, claims)
+	e := unmarshalBase64Json(ser, claims)
 	if e != nil {
 		return nil, e
 	}
 	return claims, nil
 
+}
+
+func marshalJsonBase64(v interface{}) string {
+	b, e := json.Marshal(v)
+	if e != nil {
+		return ""
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func unmarshalBase64Json(s string, v interface{}) error {
+	b, e := base64.RawURLEncoding.DecodeString(s)
+	if e != nil {
+		return e
+	}
+
+	e = json.Unmarshal(b, v)
+	if e != nil {
+		return e
+	}
+
+	return nil
 }
