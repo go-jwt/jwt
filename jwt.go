@@ -26,6 +26,14 @@ type JWT interface {
 type TokenString []string
 type KeyByte []byte
 
+type Token interface {
+	Verify() error
+	Claims() *Claims
+	Header() *Header
+	Serialize() (string, error)
+	SetKey(key interface{})
+}
+
 type token struct {
 	header *Header
 	claims *Claims
@@ -34,7 +42,7 @@ type token struct {
 }
 
 //parse claims header parameters
-func NewToken(v ...interface{}) *token {
+func NewToken(v ...interface{}) Token {
 	token := new(token)
 	token.Token = make([]string, TOKEN_MAX)
 	if len(v) > 0 {
@@ -43,15 +51,15 @@ func NewToken(v ...interface{}) *token {
 			case *Claims:
 				token.claims = v.(*Claims)
 				token.Token[TOKEN_CLAIMS] = token.claims.Base64()
-			//case Claims:
-			//	*token.claims = v.(Claims)
-			//	token.Token[TOKEN_CLAIMS] = token.claims.Base64()
+				//case Claims:
+				//	*token.claims = v.(Claims)
+				//	token.Token[TOKEN_CLAIMS] = token.claims.Base64()
 			case *Header:
 				token.header = v.(*Header)
 				token.Token[TOKEN_HEADER] = token.header.Base64()
-			//case Header:
-			//	*token.header = v.(Header)
-			//	token.Token[TOKEN_HEADER] = token.header.Base64()
+				//case Header:
+				//	*token.header = v.(Header)
+				//	token.Token[TOKEN_HEADER] = token.header.Base64()
 			case []string:
 				token.Token = TokenString(v.([]string))
 			case TokenString:
@@ -66,7 +74,7 @@ func NewToken(v ...interface{}) *token {
 	return token
 }
 
-func ParseToken(serialized string, key interface{}) (*token, error) {
+func ParseToken(serialized string, key interface{}) (Token, error) {
 	util.Debug("ParseToken")
 	var err error
 
