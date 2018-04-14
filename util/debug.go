@@ -10,7 +10,7 @@ var debug = true
 var output = ""
 
 func init() {
-	SetDebug(*flag.Bool("debug", true, "open the log output"))
+	SetDebug(*flag.Bool("debug", false, "open the log output"))
 	SetOutput(*flag.String("output", "", "output path"))
 }
 
