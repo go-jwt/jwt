@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"fmt"
-
 	"gopkg.in/jwt.v1/util"
 )
 
@@ -30,7 +28,7 @@ func (s *SigningRSA) Verify(data, sign string, key interface{}) error { // Retur
 	if !ok {
 		return ErrorInvalidKey
 	}
-	fmt.Println(data, sign)
+	util.Debug(data, sign)
 
 	st, e := base64.RawURLEncoding.DecodeString(sign)
 	if e != nil {

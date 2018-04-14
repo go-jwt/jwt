@@ -3,10 +3,6 @@ package jwt
 import (
 	"strings"
 
-	"fmt"
-
-	"log"
-
 	"gopkg.in/jwt.v1/crypto"
 	"gopkg.in/jwt.v1/util"
 )
@@ -65,7 +61,7 @@ func NewToken(v ...interface{}) Token {
 			case TokenString:
 				token.Token = v.(TokenString)
 			default:
-				log.Println("key")
+				util.Debug("key",key)
 				token.key = v
 			}
 		}
@@ -94,7 +90,7 @@ func ParseToken(serialized string, key interface{}) (Token, error) {
 	if err = t.Verify(); err != nil {
 		return nil, err
 	}
-	fmt.Println(t)
+	util.Debug(t)
 	return t, nil
 
 }
