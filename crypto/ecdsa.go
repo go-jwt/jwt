@@ -73,7 +73,7 @@ func (s *SigningECDSA) Verify(data, sign string, key interface{}) error { // Ret
 func (s *SigningECDSA) Sign(data string, key interface{}) (string, error) { // Returns encoded signature or error
 
 	if ecdsaKey, ok := key.(*ecdsa.PrivateKey); ok && ecdsaKey != nil {
-		util.Debug(("ecdsaKey", ecdsaKey)
+		util.Debug("ecdsaKey", ecdsaKey)
 		if !s.Hash.Available() {
 			return "", ErrorHashUnavailable
 		}
