@@ -61,7 +61,7 @@ func NewToken(v ...interface{}) Token {
 			case TokenString:
 				token.Token = v.(TokenString)
 			default:
-				util.Debug("key",key)
+				util.Debug("key",v)
 				token.key = v
 			}
 		}
